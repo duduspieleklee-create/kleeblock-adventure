@@ -1,0 +1,31 @@
+import Phaser from 'phaser';
+export class MainMenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'MainMenuScene' });
+    }
+    create() {
+        const { width, height } = this.cameras.main;
+        this.add.text(width / 2, height / 2 - 60, 'KleeBlock Adventure', {
+            fontSize: '48px',
+            color: '#ffffff',
+            fontFamily: 'Arial',
+        }).setOrigin(0.5);
+        // Play button
+        const playButton = this.add.text(width / 2, height / 2, 'PLAY', {
+            fontSize: '32px',
+            color: '#00ff88',
+            fontFamily: 'Arial',
+        }).setOrigin(0.5);
+        playButton.setInteractive({ useHandCursor: true });
+        playButton.on('pointerdown', () => {
+            this.scene.start('GameScene');
+        });
+        // Hover effects
+        playButton.on('pointerover', () => {
+            playButton.setScale(1.1);
+        });
+        playButton.on('pointerout', () => {
+            playButton.setScale(1.0);
+        });
+    }
+}
