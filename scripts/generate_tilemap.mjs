@@ -88,41 +88,46 @@ for (let y = 8; y <= 14; y++) {
   }
 }
 
-// Build tilemap JSON
+// Build tilemap JSON (Phaser/Tiled-compatible)
 const tilemap = {
-  height: MAP_H,
-  layers: [
-    {
-      data: data,
-      height: MAP_H,
-      name: 'ground',
-      opacity: 1,
-      visible: true,
-      width: MAP_W,
-      x: 0,
-      y: 0,
-    },
-  ],
-  nextlayerid: 2,
-  nextobjectid: 1,
+  type: 'tilemap',
+  version: '1.10',
   orientation: 'orthogonal',
   renderorder: 'right-down',
+  width: MAP_W,
+  height: MAP_H,
+  tilewidth: 16,
   tileheight: 16,
+  nextobjectid: 1,
   tilesets: [
     {
-      firstgid: 1,
+      name: 'floors',
+      tilewidth: 16,
+      tileheight: 16,
+      tilecount: MAP_W * MAP_H,
+      columns: 25,
+      rows: 26,
+      margin: 0,
+      spacing: 0,
       image: '../tilesets/floors.png',
       imagewidth: 400,
       imageheight: 416,
-      name: 'floors',
-      tileheight: 16,
-      tilewidth: 16,
     },
   ],
-  tilewidth: 16,
-  type: 'tilemap',
-  version: '1.10',
-  width: MAP_W,
+  layers: [
+    {
+      type: 'tilelayer',
+      name: 'ground',
+      width: MAP_W,
+      height: MAP_H,
+      x: 0,
+      y: 0,
+      visible: true,
+      opacity: 1,
+      encoding: 'csv',
+      data: data.flat().join(','),
+    },
+  ],
 };
 
 writeFileSync(
