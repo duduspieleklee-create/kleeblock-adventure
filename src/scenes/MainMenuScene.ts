@@ -35,10 +35,10 @@ export class MainMenuScene extends Phaser.Scene {
       playButton.setScale(1.0);
     });
 
-    // Version badge — bottom-left
-    this.add.text(4, height - 16, import.meta.env.GAME_VERSION, {
-      fontSize: '11px',
+    // Version badge — below play button
+    this.add.text(width / 2, height / 2 + 60, import.meta.env.GAME_VERSION, {
+      fontSize: '14px',
       color: '#ffffff',
-    }).setAlpha(0.5);
+    }).setOrigin(0.5).setAlpha(0.6);
   }
 }

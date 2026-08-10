@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "bash scripts/dev.sh",
     "build": "./node_modules/.bin/tsc && vite build",
     "preview": "vite preview",
     "typecheck": "./node_modules/.bin/tsc --noEmit"
