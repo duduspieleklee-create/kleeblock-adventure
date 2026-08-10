@@ -3,3 +3,6 @@ dist/
 .playtest/
 .DS_Store
 *.local
+
+# Stale TS compile outputs (Vite compiles .ts on-the-fly)
+src/**/*.js
