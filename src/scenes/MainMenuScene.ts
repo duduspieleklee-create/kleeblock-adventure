@@ -37,8 +37,8 @@ export class MainMenuScene extends Phaser.Scene {
 
     // Version badge — bottom-left
     this.add.text(4, height - 16, import.meta.env.GAME_VERSION, {
-      fontSize: '9px',
-      color: '#888888',
-    });
+      fontSize: '11px',
+      color: '#ffffff',
+    }).setAlpha(0.5);
   }
 }
