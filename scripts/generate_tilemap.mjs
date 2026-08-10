@@ -88,7 +88,7 @@ for (let y = 8; y <= 14; y++) {
   }
 }
 
-// Build tilemap JSON (Phaser/Tiled-compatible)
+// Build tilemap JSON (corrected for forest environment)
 const tilemap = {
   type: 'tilemap',
   version: '1.10',
