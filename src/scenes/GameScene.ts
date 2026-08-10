@@ -93,6 +93,12 @@ export class GameScene extends Phaser.Scene {
       padding: { x: 4, y: 2 },
     }).setAlpha(0.7);
     hint.setScrollFactor(0);
+
+    // Version badge — bottom-left, fixed to screen
+    this.add.text(4, this.cameras.main.height - 16, import.meta.env.GAME_VERSION, {
+      fontSize: '9px',
+      color: '#888888',
+    }).setScrollFactor(0);
   }
 
   update(): void {
