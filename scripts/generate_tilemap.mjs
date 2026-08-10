@@ -101,10 +101,11 @@ const tilemap = {
   nextobjectid: 1,
   tilesets: [
     {
+      firstgid: 1,
       name: 'floors',
       tilewidth: 16,
       tileheight: 16,
-      tilecount: MAP_W * MAP_H,
+      tilecount: 400,
       columns: 25,
       rows: 26,
       margin: 0,
