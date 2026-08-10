@@ -4,19 +4,35 @@ import { writeFileSync } from 'fs';
 const MAP_W = 30;  // 480px / 16
 const MAP_H = 22;  // 360px / 16
 
-// Tile indices from floors.png (400×416 = 25 cols × 26 rows at 16px)
-// Row 0: 0-24, Row 1: 25-49, etc.
+// CORRECTED Tile indices from floors.png (400×416 = 25 cols × 26 rows at 16px)
+// Row 0 (0-24): Grass and vegetation
+// Row 1 (25-49): Dirt, paths, and ground
+// Row 2 (50-74): Rocks, stones, and decorations
+// Row 3+ (75+): Water features
+
 const T = {
-  GRASS:       0,   // Row 0, Col 0 — basic green grass
-  GRASS_DARK:  1,   // Row 0, Col 1 — slightly darker grass
-  GRASS_LIGHT: 2,   // Row 0, Col 2 — lighter grass
-  DIRT:        25,  // Row 1, Col 0 — dirt path
-  DIRT_PATH:   26,  // Row 1, Col 1 — dirt path variant
-  WATER:       50,  // Row 2, Col 0 — water
-  WATER_EDGE:  51,  // Row 2, Col 1 — water edge
-  STONE:       75,  // Row 3, Col 0 — stone/decoration
-  FLUSH:       3,   // Row 0, Col 3 — small flower/grass detail
-  GRASS_ALT:   4,   // Row 0, Col 4
+  // Grass and vegetation - FIRST ROW of floors.png
+  GRASS:       0,   // Row 0, Col 0 — basic green grass (ground cover)
+  GRASS_DARK:  1,   // Row 0, Col 1 — darker grass patches
+  GRASS_LIGHT: 2,   // Row 0, Col 2 — lighter grass areas  
+  GRASS_FLOWER:3,   // Row 0, Col 3 — grass with small flowers
+  GRASS_VARIANT:4,  // Row 0, Col 4 — alternative grass texture
+  
+  // Ground and paths - SECOND ROW of floors.png  
+  DIRT:        5,   // Row 1, Col 0 — basic dirt/soil
+  DIRT_PATH:   6,   // Row 1, Col 1 — dirt path texture
+  DIRT_ROUGH:  7,   // Row 1, Col 2 — rough dirt areas
+  
+  // Rocks and decorations - THIRD ROW of floors.png
+  ROCK_SMALL:  10,  // Row 2, Col 0-9 — small rocks
+  ROCK_LARGE:  20,  // Row 2, Col 10-19 — large rocks
+  STONE:       25,  // Row 2, Col 20 — stone decoration
+  DECO:        30,  // Row 2, Col 21-24 — decorative elements
+  
+  // Water features - FOURTH ROW of floors.png
+  WATER_PUDDLE:50,  // Row 3, Col 0-9 — small puddles
+  WATER_POOL:  60,  // Row 3, Col 10-19 — larger water areas
+  WATER_SHORE: 70,  // Row 3, Col 20-24 — water edges
 };
 
 // Start with all grass
@@ -30,8 +46,8 @@ for (let y = 0; y < MAP_H; y++) {
     const r = Math.random();
     if (r < 0.08) data[y][x] = T.GRASS_DARK;
     else if (r < 0.14) data[y][x] = T.GRASS_LIGHT;
-    else if (r < 0.18) data[y][x] = T.FLUSH;
-    else if (r < 0.22) data[y][x] = T.GRASS_ALT;
+    else if (r < 0.18) data[y][x] = T.GRASS_FLOWER;
+    else if (r < 0.22) data[y][x] = T.GRASS_VARIANT;
   }
 }
 
@@ -41,8 +57,8 @@ for (let x = 0; x < MAP_W; x++) {
   const offset = Math.round(Math.sin(x * 0.4) * 2);
   const py = pathY + offset;
   if (py >= 0 && py < MAP_H) {
-    data[py][x] = T.DIRT;
-    if (py + 1 < MAP_H) data[py + 1][x] = T.DIRT_PATH;
+    data[py][x] = T.DIRT_PATH;
+    if (py + 1 < MAP_H) data[py + 1][x] = T.DIRT;
   }
 }
 
@@ -51,7 +67,7 @@ for (let y = 0; y < MAP_H; y++) {
   const offset = Math.round(Math.cos(y * 0.3) * 1);
   const px = 18 + offset;
   if (px >= 0 && px < MAP_W) {
-    data[y][px] = T.DIRT;
+    data[y][px] = T.DIRT_PATH;
   }
 }
 
@@ -64,8 +80,8 @@ for (let y = -pondRadius; y <= pondRadius; y++) {
     const px = pondCenter.x + x;
     const py = pondCenter.y + y;
     if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
-      if (dist <= 1.5) data[py][px] = T.WATER;
-      else if (dist <= 2.2) data[py][px] = T.WATER_EDGE;
+      if (dist <= 1.5) data[py][px] = T.WATER_PUDDLE;
+      else if (dist <= 2.2) data[py][px] = T.WATER_SHORE;
     }
   }
 }
@@ -81,8 +97,8 @@ for (let i = 0; i < 8; i++) {
 for (let y = 8; y <= 14; y++) {
   for (let x = 12; x <= 16; x++) {
     if (data[y][x] === T.GRASS || data[y][x] === T.GRASS_DARK ||
-        data[y][x] === T.GRASS_LIGHT || data[y][x] === T.FLUSH ||
-        data[y][x] === T.GRASS_ALT) {
+        data[y][x] === T.GRASS_LIGHT || data[y][x] === T.GRASS_FLOWER ||
+        data[y][x] === T.GRASS_VARIANT) {
       data[y][x] = T.GRASS;  // Flatten to uniform grass
     }
   }
