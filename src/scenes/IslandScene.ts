@@ -98,7 +98,7 @@ export class IslandScene extends Phaser.Scene {
 
     // Collision layer – MUST remain a regular TilemapLayer (physics reads CPU tile data)
     // Uses Tiled custom property collides=true on solid tiles (tileset local id 0 / GID 1)
-    this.collisionLayer = map.createLayer('collision', tileset, 0, 0, false)!;
+    this.collisionLayer = map.createLayer('collision', tileset, 0, 0, false)! as Phaser.Tilemaps.TilemapLayer;
     this.collisionLayer.setVisible(false).setDepth(-1);
     this.collisionLayer.setCollisionByProperty({ collides: true });
 
