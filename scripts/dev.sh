@@ -25,7 +25,8 @@ TAG_COMMIT=$(git rev-list -1 "$LATEST_TAG" 2>/dev/null || true)
 if [ "$LATEST_COMMIT" != "$TAG_COMMIT" ]; then
   # Calculate next patch version from latest tag
   if [ -n "$LATEST_TAG" ]; then
-    NEXT=$(echo "$LATEST_TAG" | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/v\1.\2.'$(( 10#${3} + 1 ))'/')
+    IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST_TAG#v}"
+    NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
   else
     NEXT="v1.0.0"
   fi

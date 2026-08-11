@@ -17,8 +17,13 @@ export class MainMenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Play button
+    const baseScale = 1;
+    const hoverScale = 1.1;
+    const cx = Math.round(width / 2);
+    const cy = Math.round(height / 2);
+
     const playButton = this.add
-      .text(width / 2, height / 2, 'PLAY', {
+      .text(cx, cy, 'PLAY', {
         fontSize: '36px',
         color: '#00ff88',
         fontFamily: 'Arial',
@@ -27,8 +32,17 @@ export class MainMenuScene extends Phaser.Scene {
 
     playButton.setInteractive({ useHandCursor: true });
     playButton.on('pointerdown', () => this.scene.start('IslandScene'));
-    playButton.on('pointerover', () => playButton.setScale(1.1));
-    playButton.on('pointerout', () => playButton.setScale(1.0));
+    playButton.on('pointerover', () => {
+      playButton.setScale(hoverScale);
+      playButton.setPosition(
+        Math.round(width / 2 / hoverScale),
+        Math.round(height / 2 / hoverScale),
+      );
+    });
+    playButton.on('pointerout', () => {
+      playButton.setScale(baseScale);
+      playButton.setPosition(cx, cy);
+    });
 
     // Version badge
     this.add

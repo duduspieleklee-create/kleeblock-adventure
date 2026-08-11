@@ -64,6 +64,10 @@ export class IslandScene extends Phaser.Scene {
     this.setupQuestTriggers();
     this.questHUD = new QuestHUD(this, this.questManager, this.questsData);
 
+    this.scale.once('resize', () => {
+      this.questHUD?.resize();
+    });
+
     // Start the default quest
     this.questManager.startQuest('island_explorer');
 
@@ -180,7 +184,7 @@ export class IslandScene extends Phaser.Scene {
     this.hud = this.add.container(0, 0).setScrollFactor(0).setDepth(DEPTH.HUD);
 
     const backBtn = this.add
-      .text(this.cameras.main.width - 60, 10, '← Menu', {
+      .text(Math.round(this.cameras.main.width - 60), Math.round(10), '← Menu', {
         fontSize: '12px',
         color: '#ffffff',
         backgroundColor: '#000000',
@@ -197,7 +201,7 @@ export class IslandScene extends Phaser.Scene {
     this.hud.add(backBtn);
 
     this.hud.add(
-      this.add.text(4, this.cameras.main.height - 16, import.meta.env.GAME_VERSION ?? '', {
+      this.add.text(Math.round(4), Math.round(this.cameras.main.height - 16), import.meta.env.GAME_VERSION ?? '', {
         fontSize: '9px',
         color: '#888888',
       }),
