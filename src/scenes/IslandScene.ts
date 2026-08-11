@@ -24,8 +24,17 @@ export class IslandScene extends Phaser.Scene {
     const groundLayer = map.createLayer('ground', sunnysideSet, 0, 0);
     const decorLayer = map.createLayer('ground_decoration', sunnysideSet, 0, 0);
 
-    // Collision on ground layer only
-    groundLayer.setCollisionByExclusion([-1]);
+    // Collision on ground layer only (exclude empty tiles)
+    groundLayer.setCollisionByExclusion([0, -1]);
+
+    // Sea is solid — carve out only where ground exists
+    seaLayer.setCollision([]); // start with nothing colliding
+    seaLayer.forEachTile((tile, x, y) => {
+      const groundTile = groundLayer.getTileAt(x, y);
+      if (!groundTile || groundTile.index === 0) {
+        tile.setCollision(true); // water blocks movement
+      }
+    });
 
     // Set world bounds to match tilemap (20×20 tiles × 16px = 320×320)
     this.physics.world.setBounds(0, 0, 320, 320);
@@ -33,6 +42,7 @@ export class IslandScene extends Phaser.Scene {
     // Create player on the island center (grass area around tile 10,10 ≈ 160,160)
     this.player = new SunnysidePlayer(this, 160, 180);
     this.physics.add.collider(this.player, groundLayer);
+    this.physics.add.collider(this.player, seaLayer);
 
     // Camera follow player with zoom
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
