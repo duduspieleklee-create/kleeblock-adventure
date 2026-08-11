@@ -96,12 +96,11 @@ export class IslandScene extends Phaser.Scene {
     this.decorLayer = map.createLayer('ground_decoration', tileset, 0, 0, useGPU)!;
     this.decorLayer.setDepth(DEPTH.DECOR);
 
-    // Collision layer – MUST remain a regular TilemapLayer
+    // Collision layer – MUST remain a regular TilemapLayer (physics reads CPU tile data)
+    // Uses Tiled custom property collides=true on solid tiles (tileset local id 0 / GID 1)
     this.collisionLayer = map.createLayer('collision', tileset, 0, 0, false)!;
-    this.collisionLayer
-      .setVisible(false)
-      .setDepth(-1)
-      .setCollisionByExclusion([-1]); // any non-empty tile collides
+    this.collisionLayer.setVisible(false).setDepth(-1);
+    this.collisionLayer.setCollisionByProperty({ collides: true });
 
     return map;
   }
