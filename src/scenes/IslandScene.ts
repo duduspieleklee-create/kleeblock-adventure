@@ -27,14 +27,18 @@ export class IslandScene extends Phaser.Scene {
     // Ground: every non-empty tile is solid
     groundLayer.setCollisionByExclusion([-1, 0]);
 
-    // Sea: materialize the collision grid first, then enable only ocean tiles
-    // (sea tiles where ground is absent)
-    seaLayer.setCollisionByExclusion([-1]);
+    // Sea: build walkable set from ground layer, then only collide on ocean
+    const walkable = new Set<string>();
     groundLayer.forEachTile((tile, x, y) => {
-      if (tile.index > 0) {
-        seaLayer.getTileAt(x, y)?.setCollision(false);
+      if (tile.index > 0) walkable.add(`${x},${y}`);
+    });
+    seaLayer.forEachTile((tile, x, y) => {
+      if (!walkable.has(`${x},${y}`)) {
+        tile.setCollision(true);
       }
     });
+    console.log('[Island] walkable:', walkable.size, '/', seaLayer.layerWidth * seaLayer.layerHeight);
+    console.log('[Island] ground non-empty:', (() => { let c=0; groundLayer.forEachTile(t=>{if(t.index>0)c++}); return c; })());
 
     // World bounds (20×20 × 16px)
     this.physics.world.setBounds(0, 0, 320, 320);
