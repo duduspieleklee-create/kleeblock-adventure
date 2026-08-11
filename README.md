@@ -7,6 +7,10 @@ npm install
 npm run dev
 ```
 
+Physics debug: open with `?debug=1`.
+
+**AI / agent handoff:** see **[AI_CONTEXT.md](./AI_CONTEXT.md)** for architecture, skills, contracts, and suggested next steps.
+
 ---
 
 ## Tiled map checklist
@@ -28,6 +32,7 @@ Prefer keeping a **`.tmx` source** next to the JSON (edit TMX, export JSON for t
 | `ground` | Walkable terrain | Visible, GPU layer when WebGL |
 | `ground_decoration` | Props on top of ground | Visible, GPU layer when WebGL |
 | `collision` | Solid tiles only | Hidden; regular `TilemapLayer` for Arcade Physics |
+| `objects` | Player spawn + NPCs | Object layer (`type`: `spawn` / `npc`) |
 
 Tileset name in Tiled must match code: **`sunnyside`**.
 
@@ -52,6 +57,16 @@ this.collisionLayer.setCollisionByProperty({ collides: true });
 
 Marking more solid tiles in Tiled does **not** require code changes.
 
+### Objects layer (spawns)
+
+| Object name | type | Properties |
+|-------------|------|------------|
+| `player_spawn` | `spawn` | `role: player` |
+| `welcome_npc` | `npc` | `dialogueId: welcome_npc` |
+| `vibes_npc` | `npc` | `dialogueId: vibes_npc` |
+
+Add NPCs in Tiled only; `IslandScene` reads the layer at runtime.
+
 ### Resize / expand the map
 
 1. In Tiled: **Map → Resize Map…**
@@ -74,7 +89,7 @@ Visual layers use Phaser 4 **TilemapGPULayer** when WebGL is available (cost is 
 
 - [ ] Orientation: **Orthogonal**
 - [ ] Tile size: **16×16** (matches SunnySide)
-- [ ] Layer names exactly: `sea`, `ground`, `ground_decoration`, `collision`
+- [ ] Layer names exactly: `sea`, `ground`, `ground_decoration`, `collision` (+ optional `objects`)
 - [ ] Tileset name: `sunnyside`
 - [ ] Solid tiles have custom property `collides` = `true`
 - [ ] Collision layer may be invisible in Tiled; it is forced hidden in game
