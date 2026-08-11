@@ -1,0 +1,43 @@
+{
+  "game": {
+    "files": [
+      {
+        "type": "image",
+        "key": "sunnyside",
+        "url": "assets/tilesets/spr_tileset_sunnysideworld_16px.png"
+      },
+      {
+        "type": "tilemapTiledJSON",
+        "key": "island",
+        "url": "assets/tilemaps/island.json"
+      },
+      {
+        "type": "spritesheet",
+        "key": "ss_idle",
+        "url": "assets/characters/sunnyside/base_idle_strip9.png",
+        "frameConfig": {
+          "frameWidth": 96,
+          "frameHeight": 64
+        }
+      },
+      {
+        "type": "spritesheet",
+        "key": "ss_walk",
+        "url": "assets/characters/sunnyside/base_walk_strip8.png",
+        "frameConfig": {
+          "frameWidth": 96,
+          "frameHeight": 64
+        }
+      },
+      {
+        "type": "spritesheet",
+        "key": "ss_run",
+        "url": "assets/characters/sunnyside/base_run_strip8.png",
+        "frameConfig": {
+          "frameWidth": 96,
+          "frameHeight": 64
+        }
+      }
+    ]
+  }
+}
