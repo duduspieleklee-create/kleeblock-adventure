@@ -1252,7 +1252,7 @@
   "tilesets": [
     {
       "columns": 64,
-      "image": "assets/tilesets/spr_tileset_sunnysideworld_16px.png",
+      "image": "sunnyside",
       "imageheight": 1024,
       "imagewidth": 1024,
       "margin": 0,

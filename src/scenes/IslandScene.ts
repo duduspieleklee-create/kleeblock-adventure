@@ -28,16 +28,11 @@ export class IslandScene extends Phaser.Scene {
     // Ground: all non-empty tiles are solid
     groundLayer.setCollisionByExclusion([-1, 0]);
 
-    // Sea: ALL tiles collide, then carve out where ground exists
-    seaLayer.setCollisionByExclusion([-1]); // every sea tile collides
-
-    // Now walk the ground layer and disable sea collision under each ground tile
-    groundLayer.forEachTile((tile, x, y) => {
-      if (tile.index > 0) {
-        const seaTile = seaLayer.getTileAt(x, y);
-        if (seaTile) {
-          seaTile.setCollision(false);
-        }
+    // Sea: only collide where there's NO ground tile above
+    seaLayer.forEachTile((tile, x, y) => {
+      const groundTile = groundLayer.getTileAt(x, y);
+      if (!groundTile || groundTile.index === 0) {
+        tile.setCollision(true);
       }
     });
 
