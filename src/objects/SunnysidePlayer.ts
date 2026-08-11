@@ -22,8 +22,10 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(10);
 
     // Compact 16x16 hitbox centered on sprite
-    this.body.setSize(16, 16);
-    this.body.setOffset(40, 48);
+    if (this.body) {
+      this.body.setSize(16, 16);
+      this.body.setOffset(40, 48);
+    }
 
     this.createAnimations(scene);
 
@@ -38,56 +40,32 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
   }
 
   private createAnimations(scene: Phaser.Scene): void {
-    // Idle strip9: 96px frames × 9 = 864px
-    scene.anims.create({
-      key: 'ss_idle_down',
-      frames: scene.anims.generateFrameNumbers('ss_idle', { start: 1, end: 7, increment: 2 }),
-      frameRate: 6, repeat: -1,
-    });
-    scene.anims.create({
-      key: 'ss_idle_side',
-      frames: scene.anims.generateFrameNumbers('ss_idle', { start: 0, end: 8, increment: 4 }),
-      frameRate: 6, repeat: -1,
-    });
-    scene.anims.create({
-      key: 'ss_idle_up',
-      frames: scene.anims.generateFrameNumbers('ss_idle', { start: 2, end: 6, increment: 2 }),
-      frameRate: 6, repeat: -1,
-    });
+    // Strip layout: frames alternate directions L→D→R→D→L...
+    // Idle strip9 (frames 0-8): L(0) D(1) R(2) D(3) L(4) D(5) R(6) D(7) L(8)
+    // Walk strip8 (frames 0-7): L(0) D(1) R(2) D(3) L(4) D(5) R(6) D(7)
+    // Run strip8  (frames 0-7): same layout as walk
 
-    // Walk strip8: 96px frames × 8 = 768px
-    scene.anims.create({
-      key: 'ss_walk_down',
-      frames: scene.anims.generateFrameNumbers('ss_walk', { start: 1, end: 7, increment: 2 }),
-      frameRate: 10, repeat: -1,
-    });
-    scene.anims.create({
-      key: 'ss_walk_side',
-      frames: scene.anims.generateFrameNumbers('ss_walk', { start: 0, end: 4, increment: 4 }),
-      frameRate: 10, repeat: -1,
-    });
-    scene.anims.create({
-      key: 'ss_walk_up',
-      frames: scene.anims.generateFrameNumbers('ss_walk', { start: 2, end: 6, increment: 2 }),
-      frameRate: 10, repeat: -1,
-    });
+    const idleDown  = [1, 3, 5, 7];
+    const idleSide  = [0, 4, 8];
+    const idleUp    = [2, 6];
+    const walkDown  = [1, 3, 5, 7];
+    const walkSide  = [0, 4];
+    const walkUp    = [2, 6];
 
-    // Run strip8
-    scene.anims.create({
-      key: 'ss_run_down',
-      frames: scene.anims.generateFrameNumbers('ss_run', { start: 1, end: 7, increment: 2 }),
-      frameRate: 14, repeat: -1,
-    });
-    scene.anims.create({
-      key: 'ss_run_side',
-      frames: scene.anims.generateFrameNumbers('ss_run', { start: 0, end: 4, increment: 4 }),
-      frameRate: 14, repeat: -1,
-    });
-    scene.anims.create({
-      key: 'ss_run_up',
-      frames: scene.anims.generateFrameNumbers('ss_run', { start: 2, end: 6, increment: 2 }),
-      frameRate: 14, repeat: -1,
-    });
+    // Idle
+    scene.anims.create({ key: 'ss_idle_down', frames: idleDown.map(f => ({ key: 'ss_idle', frame: f })), frameRate: 6, repeat: -1 });
+    scene.anims.create({ key: 'ss_idle_side', frames: idleSide.map(f => ({ key: 'ss_idle', frame: f })), frameRate: 6, repeat: -1 });
+    scene.anims.create({ key: 'ss_idle_up',   frames: idleUp.map(f => ({ key: 'ss_idle', frame: f })),   frameRate: 6, repeat: -1 });
+
+    // Walk
+    scene.anims.create({ key: 'ss_walk_down', frames: walkDown.map(f => ({ key: 'ss_walk', frame: f })), frameRate: 10, repeat: -1 });
+    scene.anims.create({ key: 'ss_walk_side', frames: walkSide.map(f => ({ key: 'ss_walk', frame: f })), frameRate: 10, repeat: -1 });
+    scene.anims.create({ key: 'ss_walk_up',   frames: walkUp.map(f => ({ key: 'ss_walk', frame: f })),   frameRate: 10, repeat: -1 });
+
+    // Run
+    scene.anims.create({ key: 'ss_run_down', frames: walkDown.map(f => ({ key: 'ss_run', frame: f })), frameRate: 14, repeat: -1 });
+    scene.anims.create({ key: 'ss_run_side', frames: walkSide.map(f => ({ key: 'ss_run', frame: f })), frameRate: 14, repeat: -1 });
+    scene.anims.create({ key: 'ss_run_up',   frames: walkUp.map(f => ({ key: 'ss_run', frame: f })),   frameRate: 14, repeat: -1 });
   }
 
   update(): void {

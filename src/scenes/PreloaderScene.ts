@@ -32,10 +32,6 @@ export class PreloaderScene extends Phaser.Scene {
     // --- Tilemap JSON ---
     this.load.tilemapTiledJSON('island', 'assets/tilemaps/island.json');
 
-    // --- Vegetation & rocks ---
-    this.load.image('vegetation', 'assets/images/vegetation.png');
-    this.load.image('rocks', 'assets/images/rocks.png');
-
     // --- Sunnyside Human character (96x64 frames) ---
     this.load.spritesheet('ss_idle', 'assets/characters/sunnyside/base_idle_strip9.png', { frameWidth: 96, frameHeight: 64 });
     this.load.spritesheet('ss_walk', 'assets/characters/sunnyside/base_walk_strip8.png', { frameWidth: 96, frameHeight: 64 });
@@ -43,7 +39,6 @@ export class PreloaderScene extends Phaser.Scene {
   }
 
   create(): void {
-    // No more placeholder textures — all real assets loaded above
     this.scene.start('MainMenuScene');
   }
 }

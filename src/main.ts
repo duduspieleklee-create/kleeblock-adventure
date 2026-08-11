@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { BootScene } from './scenes/BootScene';
+import { PreloaderScene } from './scenes/PreloaderScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { IslandScene } from './scenes/IslandScene';
 

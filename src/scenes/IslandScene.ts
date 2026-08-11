@@ -22,9 +22,9 @@ export class IslandScene extends Phaser.Scene {
     const sunnysideSet = map.addTilesetImage('sunnyside', 'sunnyside')!;;
 
     // Render order: sea (bottom) → ground → decorations (top)
-    const seaLayer = this.seaLayer = map.createLayer('sea', sunnysideSet, 0, 0);
-    const groundLayer = this.groundLayer = map.createLayer('ground', sunnysideSet, 0, 0);
-    const decorLayer = map.createLayer('ground_decoration', sunnysideSet, 0, 0);
+    const seaLayer = this.seaLayer = map.createLayer('sea', sunnysideSet, 0, 0) as Phaser.Tilemaps.TilemapLayer;
+    const groundLayer = this.groundLayer = map.createLayer('ground', sunnysideSet, 0, 0) as Phaser.Tilemaps.TilemapLayer;
+    const decorLayer = map.createLayer('ground_decoration', sunnysideSet, 0, 0) as Phaser.Tilemaps.TilemapLayer;
 
     // --- Collision ---
     // Ground: every non-empty tile is solid
@@ -67,8 +67,8 @@ export class IslandScene extends Phaser.Scene {
     // Interaction
     this.interactionKey = this.input.keyboard!.addKey('E');
 
-    // HUD
-    const hint = this.add.text(10, 10, 'E: Interact', {
+    // HUD: interaction hint
+    this.add.text(10, 10, 'E: Interact', {
       fontSize: '10px', color: '#ffffff', backgroundColor: '#000000', padding: { x: 4, y: 2 },
     }).setAlpha(0.7).setScrollFactor(0);
 
