@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { Player } from '../objects/Player';
 import { NPC } from '../objects/NPC';
 import { DialogBox } from '../objects/DialogBox';
+import { SunnysidePlayer } from '../objects/SunnysidePlayer';
 
 export class IslandScene extends Phaser.Scene {
-  private player!: Player;
+  private player!: SunnysidePlayer;
   private npcs!: NPC[];
   private dialogBox: DialogBox | null = null;
   private interactionKey!: Phaser.Input.Keyboard.Key;
@@ -17,7 +17,7 @@ export class IslandScene extends Phaser.Scene {
   create(): void {
     // Load tilemap
     const map = this.make.tilemap({ key: 'island' });
-    const sunnysideSet = map.addTilesetImage('spr_tileset_sunnysideworld_16px', 'sunnyside')!;
+    const sunnysideSet = map.addTilesetImage('sunnyside', 'sunnyside')!;;
 
     // Create layers (sea background, then ground, then decorations on top)
     const seaLayer = map.createLayer('sea', sunnysideSet, 0, 0);
@@ -31,7 +31,7 @@ export class IslandScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, 320, 320);
 
     // Create player on the island center (grass area around tile 10,10 ≈ 160,160)
-    this.player = new Player(this, 160, 160);
+    this.player = new SunnysidePlayer(this, 160, 180);
     this.physics.add.collider(this.player, groundLayer);
 
     // Camera follow player with zoom

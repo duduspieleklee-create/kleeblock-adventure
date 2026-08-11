@@ -57,6 +57,11 @@ export class PreloaderScene extends Phaser.Scene {
     // --- Vegetation & rocks ---
     this.load.image('vegetation', 'assets/images/vegetation.png');
     this.load.image('rocks', 'assets/images/rocks.png');
+
+    // --- Sunnyside Human character (96x64 frames) ---
+    this.load.spritesheet('ss_idle', 'assets/characters/sunnyside/base_idle_strip9.png', { frameWidth: 96, frameHeight: 64 });
+    this.load.spritesheet('ss_walk', 'assets/characters/sunnyside/base_walk_strip8.png', { frameWidth: 96, frameHeight: 64 });
+    this.load.spritesheet('ss_run',  'assets/characters/sunnyside/base_run_strip8.png', { frameWidth: 96, frameHeight: 64 });
   }
 
   create(): void {

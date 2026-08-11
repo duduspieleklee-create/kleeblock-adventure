@@ -1252,11 +1252,11 @@
   "tilesets": [
     {
       "columns": 64,
-      "image": "sunnyside",
+      "image": "assets/tilesets/spr_tileset_sunnysideworld_16px.png",
       "imageheight": 1024,
       "imagewidth": 1024,
       "margin": 0,
-      "name": "spr_tileset_sunnysideworld_16px",
+      "name": "sunnyside",
       "spacing": 0,
       "tilecount": 4096,
       "tiledversion": "1.11.1-99-gec89c545",
