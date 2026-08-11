@@ -12,13 +12,18 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
   private lastDir: 'down' | 'side' | 'up' = 'down';
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'ss_idle', 1); // start with down-facing idle frame
+    super(scene, x, y, 'ss_idle', 1);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
     this.setCollideWorldBounds(true);
-    this.setScale(0.6); // scale 96px → ~58px to fit 16px tile world nicely
+    this.setScale(0.6);
+    this.setOrigin(0.5, 0.5);
     this.setDepth(10);
+
+    // Compact 16x16 hitbox centered on sprite
+    this.body.setSize(16, 16);
+    this.body.setOffset(40, 48);
 
     this.createAnimations(scene);
 
@@ -33,8 +38,7 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
   }
 
   private createAnimations(scene: Phaser.Scene): void {
-    // Idle strip9: 96px frames × 9 = 864px. Pattern: L D R D L D R D L (index 0-8)
-    // Down frames: 1,3,5,7  |  Side-left: 0,4,8  |  Side-right: 2,6  |  Up: reuse side with flip
+    // Idle strip9: 96px frames × 9 = 864px
     scene.anims.create({
       key: 'ss_idle_down',
       frames: scene.anims.generateFrameNumbers('ss_idle', { start: 1, end: 7, increment: 2 }),
@@ -51,8 +55,7 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
       frameRate: 6, repeat: -1,
     });
 
-    // Walk strip8: 96px frames × 8 = 768px. Pattern: L D R D L D R D
-    // Down: 1,3,5,7  |  Side-left: 0,4  |  Side-right: 2,6  |  Up: 1,5 or 3,7
+    // Walk strip8: 96px frames × 8 = 768px
     scene.anims.create({
       key: 'ss_walk_down',
       frames: scene.anims.generateFrameNumbers('ss_walk', { start: 1, end: 7, increment: 2 }),
@@ -69,7 +72,7 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
       frameRate: 10, repeat: -1,
     });
 
-    // Run strip8: same frame layout as walk
+    // Run strip8
     scene.anims.create({
       key: 'ss_run_down',
       frames: scene.anims.generateFrameNumbers('ss_run', { start: 1, end: 7, increment: 2 }),
@@ -108,7 +111,7 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
     else if (vy < 0) this.lastDir = 'up';
     else if (vx !== 0) this.lastDir = 'side';
 
-    if (vx < 0) this.setFlipX(false); // sunnyside frames already have left-facing
+    if (vx < 0) this.setFlipX(false);
     if (vx > 0) this.setFlipX(true);
 
     if (isMoving) {

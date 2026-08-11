@@ -9,6 +9,9 @@ export class IslandScene extends Phaser.Scene {
   private dialogBox: DialogBox | null = null;
   private interactionKey!: Phaser.Input.Keyboard.Key;
   private isDialogOpen = false;
+  private prevTileKey = '';
+  private seaLayer!: Phaser.Tilemaps.TilemapLayer;
+  private groundLayer!: Phaser.Tilemaps.TilemapLayer;
 
   constructor() {
     super({ key: 'IslandScene' });
@@ -19,26 +22,27 @@ export class IslandScene extends Phaser.Scene {
     const sunnysideSet = map.addTilesetImage('sunnyside', 'sunnyside')!;;
 
     // Render order: sea (bottom) → ground → decorations (top)
-    const seaLayer = map.createLayer('sea', sunnysideSet, 0, 0);
-    const groundLayer = map.createLayer('ground', sunnysideSet, 0, 0);
+    const seaLayer = this.seaLayer = map.createLayer('sea', sunnysideSet, 0, 0);
+    const groundLayer = this.groundLayer = map.createLayer('ground', sunnysideSet, 0, 0);
     const decorLayer = map.createLayer('ground_decoration', sunnysideSet, 0, 0);
 
     // --- Collision ---
     // Ground: every non-empty tile is solid
     groundLayer.setCollisionByExclusion([-1, 0]);
 
-    // Sea: build walkable set from ground layer, then only collide on ocean
+    // Sea: 1) materialize collision grid, 2) build walkable set, 3) carve
+    seaLayer.setCollisionByExclusion([-1]); // step 1: all sea tiles collide
     const walkable = new Set<string>();
     groundLayer.forEachTile((tile, x, y) => {
       if (tile.index > 0) walkable.add(`${x},${y}`);
-    });
+    }); // step 2
     seaLayer.forEachTile((tile, x, y) => {
-      if (!walkable.has(`${x},${y}`)) {
-        tile.setCollision(true);
-      }
+      if (walkable.has(`${x},${y}`)) tile.setCollision(false); // step 3: carve out ground spots
     });
-    console.log('[Island] walkable:', walkable.size, '/', seaLayer.layerWidth * seaLayer.layerHeight);
-    console.log('[Island] ground non-empty:', (() => { let c=0; groundLayer.forEachTile(t=>{if(t.index>0)c++}); return c; })());
+    // Decor: non-empty tiles are solid (trees, bushes, etc.)
+    decorLayer.setCollisionByExclusion([-1, 0]);
+
+    console.log('[Island] sea collision: carved', walkable.size, 'walkable tiles');
 
     // World bounds (20×20 × 16px)
     this.physics.world.setBounds(0, 0, 320, 320);
@@ -47,6 +51,7 @@ export class IslandScene extends Phaser.Scene {
     this.player = new SunnysidePlayer(this, 160, 180);
     this.physics.add.collider(this.player, groundLayer);
     this.physics.add.collider(this.player, seaLayer);
+    this.physics.add.collider(this.player, decorLayer);
 
     // Camera
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
@@ -82,6 +87,17 @@ export class IslandScene extends Phaser.Scene {
 
   update(): void {
     this.player.update();
+
+    // Tile-change tracker: log when player enters a new tile
+    const tx = Math.floor(this.player.x / 16);
+    const ty = Math.floor(this.player.y / 16);
+    const key = `${tx},${ty}`;
+    if (key !== this.prevTileKey) {
+      this.prevTileKey = key;
+      const gGid = this.groundLayer.getTileAt(tx, ty)?.index ?? -1;
+      const sGid = this.seaLayer.getTileAt(tx, ty)?.index ?? -1;
+      console.log(`[Tile] ${key} | ground GID: ${gGid} | sea GID: ${sGid}`);
+    }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactionKey)) {
       if (this.isDialogOpen && this.dialogBox) {

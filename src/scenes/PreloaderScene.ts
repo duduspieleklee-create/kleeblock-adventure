@@ -27,32 +27,10 @@ export class PreloaderScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // --- Tilesets ---
-    this.load.image('floors', 'assets/tilesets/floors.png');
     this.load.image('sunnyside', 'assets/tilesets/spr_tileset_sunnysideworld_16px.png');
 
     // --- Tilemap JSON ---
-    this.load.tilemapTiledJSON('forest', 'assets/tilemaps/forest_beginner.json');
     this.load.tilemapTiledJSON('island', 'assets/tilemaps/island.json');
-
-    // --- Player character spritesheets (32px frame width, 16px height) ---
-    this.load.spritesheet('player_idle_down', 'assets/characters/player_idle_down.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_idle_side', 'assets/characters/player_idle_side.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_idle_up', 'assets/characters/player_idle_up.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_walk_down', 'assets/characters/player_walk_down.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_walk_side', 'assets/characters/player_walk_side.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_walk_up', 'assets/characters/player_walk_up.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_run_down', 'assets/characters/player_run_down.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_run_side', 'assets/characters/player_run_side.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('player_run_up', 'assets/characters/player_run_up.png', { frameWidth: 16, frameHeight: 16 });
-
-    // --- NPC: use player_idle_side as placeholder (same format) ---
-    this.load.spritesheet('npc_idle', 'assets/characters/player_idle_side.png', { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet('npc_walk', 'assets/characters/player_walk_side.png', { frameWidth: 16, frameHeight: 16 });
-
-    // --- Trees ---
-    this.load.image('tree1_s3', 'assets/images/trees/tree1_s3.png');
-    this.load.image('tree2_s3', 'assets/images/trees/tree2_s3.png');
-    this.load.image('tree3_s3', 'assets/images/trees/tree3_s3.png');
 
     // --- Vegetation & rocks ---
     this.load.image('vegetation', 'assets/images/vegetation.png');
