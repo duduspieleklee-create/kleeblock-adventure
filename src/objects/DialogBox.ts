@@ -9,11 +9,13 @@ export class DialogBox extends Phaser.GameObjects.Container {
     const maxWidth = 160;
 
     // Measure text first to get exact box size
-    const tempText = scene.add.text(0, 0, text, {
-      fontSize: fontSize,
-      color: '#e0e0e0',
-      wordWrap: { width: maxWidth },
-    }).setOrigin(0);
+    const tempText = scene.add
+      .text(0, 0, text, {
+        fontSize: fontSize,
+        color: '#e0e0e0',
+        wordWrap: { width: maxWidth },
+      })
+      .setOrigin(0);
 
     const bounds = tempText.getBounds();
     const boxW = Math.round(bounds.width + padding * 2);
@@ -29,11 +31,13 @@ export class DialogBox extends Phaser.GameObjects.Container {
     this.add(bg);
 
     // Text - centered
-    const textBox = scene.add.text(0, 0, text, {
-      fontSize: fontSize,
-      color: '#e0e0e0',
-      wordWrap: { width: boxW - padding * 2 },
-    }).setOrigin(0.5);
+    const textBox = scene.add
+      .text(0, 0, text, {
+        fontSize: fontSize,
+        color: '#e0e0e0',
+        wordWrap: { width: boxW - padding * 2 },
+      })
+      .setOrigin(0.5);
     this.add(textBox);
 
     scene.add.existing(this);
