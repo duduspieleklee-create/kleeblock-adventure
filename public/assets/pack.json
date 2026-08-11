@@ -17,6 +17,11 @@
         "url": "assets/data/dialogues.json"
       },
       {
+        "type": "json",
+        "key": "quests",
+        "url": "assets/data/quests.json"
+      },
+      {
         "type": "spritesheet",
         "key": "ss_idle",
         "url": "assets/characters/sunnyside/base_idle_strip9.png",

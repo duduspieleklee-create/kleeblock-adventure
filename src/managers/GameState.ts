@@ -58,6 +58,20 @@ export class GameState {
   }
 
   /**
+   * Mark that a quest has been started.
+   */
+  markQuestStarted(questId: string): void {
+    this.set(`quest_${questId}_started`, true);
+  }
+
+  /**
+   * Check if a quest has been started.
+   */
+  hasQuestStarted(questId: string): boolean {
+    return (this.get(`quest_${questId}_started`) as boolean) || false;
+  }
+
+  /**
    * Reset all state (useful for testing or new game).
    */
   reset(): void {

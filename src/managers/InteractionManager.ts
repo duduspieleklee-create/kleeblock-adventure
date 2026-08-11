@@ -90,6 +90,12 @@ export class InteractionManager {
 
   private showNextDialog(): void {
     if (this.currentDialogIndex >= this.currentDialogSequence.length) {
+      // Emit event when all dialogues are complete
+      if (this.currentNearbyNPC) {
+        this.scene.events.emit('dialogueSequenceCompleted', {
+          dialogueId: this.currentNearbyNPC.dialogueId,
+        });
+      }
       this.dismissDialog();
       return;
     }
