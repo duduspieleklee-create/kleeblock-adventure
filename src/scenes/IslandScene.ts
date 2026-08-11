@@ -1,16 +1,10 @@
 import Phaser from 'phaser';
 import { NPC } from '../objects/NPC';
-import { DialogBox } from '../objects/DialogBox';
 import { SunnysidePlayer } from '../objects/SunnysidePlayer';
 
 export class IslandScene extends Phaser.Scene {
   private player!: SunnysidePlayer;
   private npcs!: NPC[];
-  private dialogBox: DialogBox | null = null;
-  private activeNPC: NPC | null = null;
-  private interactionKey!: Phaser.Input.Keyboard.Key;
-  private isDialogOpen = false;
-  private interactionRange = 48;
   private hud!: Phaser.GameObjects.Container;
 
   constructor() {
@@ -60,17 +54,9 @@ export class IslandScene extends Phaser.Scene {
       for (const npc of this.npcs) { npc.setDepth(npc.y); }
     });
 
-    // ── Interaction ──
-    this.interactionKey = this.input.keyboard!.addKey('E');
-
     // ── HUD (fixed, depth 9999) ──
     this.hud = this.add.container(0, 0).setScrollFactor(0);
     this.hud.setDepth(9999);
-
-    this.hud.add(this.add.text(10, 10, 'E: Interact', {
-      fontSize: '10px', color: '#ffffff', backgroundColor: '#000000',
-      padding: { x: 4, y: 2 },
-    }).setAlpha(0.7));
 
     const backBtn = this.add.text(this.cameras.main.width - 60, 10, '← Menu', {
       fontSize: '12px', color: '#ffffff', backgroundColor: '#000000',
@@ -89,44 +75,5 @@ export class IslandScene extends Phaser.Scene {
 
   update(): void {
     this.player.update();
-
-    // Auto-close dialog if player walks away
-    if (this.isDialogOpen && this.activeNPC) {
-      const dist = Phaser.Math.Distance.Between(
-        this.player.x, this.player.y, this.activeNPC.x, this.activeNPC.y
-      );
-      if (dist > this.interactionRange + 48) {
-        this.closeDialog();
-      }
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.interactionKey)) {
-      if (this.isDialogOpen && this.dialogBox) {
-        this.closeDialog();
-      } else {
-        for (const npc of this.npcs) {
-          if (Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.x, npc.y) < this.interactionRange) {
-            this.openDialog(npc);
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  private openDialog(npc: NPC): void {
-    // Fixed at bottom-center of camera — never floats, never scrolls
-    this.dialogBox = new DialogBox(this, npc.dialogText);
-    this.dialogBox.setScrollFactor(0);
-    this.dialogBox.setDepth(10000);
-    this.activeNPC = npc;
-    this.isDialogOpen = true;
-  }
-
-  private closeDialog(): void {
-    this.dialogBox?.destroy();
-    this.dialogBox = null;
-    this.activeNPC = null;
-    this.isDialogOpen = false;
   }
 }
