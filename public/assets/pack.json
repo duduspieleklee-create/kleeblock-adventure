@@ -12,6 +12,11 @@
         "url": "assets/tilemaps/island.json"
       },
       {
+        "type": "json",
+        "key": "dialogues",
+        "url": "assets/data/dialogues.json"
+      },
+      {
         "type": "spritesheet",
         "key": "ss_idle",
         "url": "assets/characters/sunnyside/base_idle_strip9.png",

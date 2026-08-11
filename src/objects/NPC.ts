@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
 
 export class NPC extends Phaser.Physics.Arcade.Sprite {
-  private _dialogText: string;
+  private _dialogueId: string;
 
-  get dialogText(): string {
-    return this._dialogText;
+  get dialogueId(): string {
+    return this._dialogueId;
   }
 
-  constructor(scene: Phaser.Scene, x: number, y: number, dialogText: string) {
+  constructor(scene: Phaser.Scene, x: number, y: number, dialogueId: string) {
     super(scene, x, y, 'ss_idle', 1);
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -16,7 +16,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.setScale(0.6);
     this.setOrigin(0.5, 0.5);
     this.setImmovable(true);
-    this._dialogText = dialogText;
+    this._dialogueId = dialogueId;
 
     // Defer body sizing to first update tick (same as Player)
     scene.events.once(Phaser.Scenes.Events.UPDATE, () => {

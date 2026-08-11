@@ -1,0 +1,16 @@
+{
+  "welcome_npc": {
+    "sequence": [
+      "Welcome to Sunny Side Island!",
+      "It's a beautiful place, isn't it?",
+      "Watch out for the ocean though, it's deeper than it looks!"
+    ]
+  },
+  "vibes_npc": {
+    "sequence": [
+      "The sun always shines here.",
+      "No monsters, just good vibes!",
+      "Feel free to explore the island at your own pace."
+    ]
+  }
+}
