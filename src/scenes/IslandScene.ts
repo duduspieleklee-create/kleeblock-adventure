@@ -67,6 +67,14 @@ export class IslandScene extends Phaser.Scene {
     // Start the default quest
     this.questManager.startQuest('island_explorer');
 
+    // Initial spatial markers
+    this.updateQuestMarkers();
+
+    // Listen for quest changes to refresh markers
+    this.questManager.on('questStarted', () => this.updateQuestMarkers());
+    this.questManager.on('objectiveCompleted', () => this.updateQuestMarkers());
+    this.questManager.on('questCompleted', () => this.updateQuestMarkers());
+
     // Y-sorting for characters
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
   }
@@ -182,7 +190,7 @@ export class IslandScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------------------
-  // Quests
+  // Quests + Spatial Markers
   // ---------------------------------------------------------------------------
 
   private setupQuestTriggers(): void {
@@ -202,6 +210,36 @@ export class IslandScene extends Phaser.Scene {
           }
         }
       }
+    });
+  }
+
+  /**
+   * Update spatial ! markers above NPCs based on active quest objectives.
+   * Shows a golden ! when an NPC is the target of an incomplete dialogue objective.
+   */
+  private updateQuestMarkers(): void {
+    if (!this.questManager || !this.npcGroup) return;
+
+    const activeQuests = this.questManager.getActiveQuests();
+    const targetDialogueIds = new Set<string>();
+
+    // Collect all dialogue targets from incomplete objectives
+    for (const status of activeQuests) {
+      const quest = this.questsData[status.questId];
+      if (!quest) continue;
+
+      for (const obj of quest.objectives) {
+        if (obj.type === 'dialogue' && !status.objectives[obj.id]) {
+          targetDialogueIds.add(obj.targetId);
+        }
+      }
+    }
+
+    // Apply markers to NPCs
+    this.npcGroup.getChildren().forEach((child) => {
+      const npc = child as NPC;
+      const shouldShow = targetDialogueIds.has(npc.dialogueId);
+      npc.setQuestMarker(shouldShow, '#ffcc00');
     });
   }
 
