@@ -1,0 +1,40 @@
+{
+  "island_explorer": {
+    "title": "Island Explorer",
+    "description": "Get to know the island and its inhabitants.",
+    "objectives": [
+      {
+        "id": "talk_to_welcome",
+        "description": "Speak with the Welcome NPC",
+        "type": "dialogue",
+        "targetId": "welcome_npc"
+      },
+      {
+        "id": "talk_to_vibes",
+        "description": "Speak with the Vibes NPC",
+        "type": "dialogue",
+        "targetId": "vibes_npc"
+      }
+    ],
+    "reward": {
+      "stateFlag": "is_explorer",
+      "message": "You are now an official Island Explorer!"
+    }
+  },
+  "ocean_watch": {
+    "title": "Ocean Watch",
+    "description": "Check the dangerous waters.",
+    "objectives": [
+      {
+        "id": "visit_shore",
+        "description": "Reach the southern shore",
+        "type": "location",
+        "targetId": "southern_shore"
+      }
+    ],
+    "reward": {
+      "stateFlag": "knows_ocean",
+      "message": "You've seen the depths of the ocean."
+    }
+  }
+}

@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { NPC } from '../objects/NPC';
 import { SunnysidePlayer } from '../objects/SunnysidePlayer';
 import { InteractionManager } from '../managers/InteractionManager';
-import { GameState } from '../managers/GameState';
+import { QuestManager, Quest } from '../managers/QuestManager';
+import { QuestHUD } from '../ui/QuestHUD';
 
 export class IslandScene extends Phaser.Scene {
   private player!: SunnysidePlayer;
@@ -10,18 +11,22 @@ export class IslandScene extends Phaser.Scene {
   private hud!: Phaser.GameObjects.Container;
   private collisionLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
   private interactionManager?: InteractionManager;
-  private gameState: GameState;
+  private questManager?: QuestManager;
+  private questHUD?: QuestHUD;
   private dialogueData: Record<string, { sequence: string[] }> = {};
+  private questsData: Record<string, Quest> = {};
 
   constructor() {
     super({ key: 'IslandScene' });
-    this.gameState = GameState.getInstance();
   }
 
   create(): void {
-    // Load dialogue data
+    // Load dialogue and quest data
     const dialoguesCache = this.cache.json.get('dialogues');
     this.dialogueData = dialoguesCache || {};
+
+    const questsCache = this.cache.json.get('quests');
+    this.questsData = questsCache || {};
 
     const map = this.setupMap();
     this.setupPhysics(map);
@@ -33,6 +38,16 @@ export class IslandScene extends Phaser.Scene {
     // Initialize interaction manager
     const npcs = this.npcGroup.getChildren() as NPC[];
     this.interactionManager = new InteractionManager(this, this.player, npcs, this.dialogueData);
+
+    // Initialize quest manager
+    this.questManager = new QuestManager(this, this.questsData);
+    this.setupQuestTriggers();
+
+    // Initialize quest HUD
+    this.questHUD = new QuestHUD(this, this.questManager, this.questsData);
+
+    // Start initial quest
+    this.questManager.startQuest('island_explorer');
 
     // ── Y-sorting ──
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
@@ -69,7 +84,7 @@ export class IslandScene extends Phaser.Scene {
   private setupNPCs(): void {
     this.npcGroup = this.physics.add.staticGroup();
 
-    // NPC data - in a full game, this would come from Tiled Object Layers
+    // NPC data
     const npcData = [
       { x: 160, y: 120, dialogueId: 'welcome_npc' },
       { x: 200, y: 180, dialogueId: 'vibes_npc' },
@@ -118,23 +133,28 @@ export class IslandScene extends Phaser.Scene {
         color: '#888888',
       }),
     );
+  }
 
-    // Debug state display (optional)
-    const debugText = this.add
-      .text(4, 10, '', {
-        fontSize: '8px',
-        color: '#666666',
-      })
-      .setScrollFactor(0)
-      .setDepth(9999);
+  private setupQuestTriggers(): void {
+    if (!this.questManager) return;
 
-    this.events.on(Phaser.Scenes.Events.UPDATE, () => {
-      const state = this.gameState.getAll();
-      const dialoguesRead = (state.totalDialoguesRead as number) || 0;
-      debugText.setText(`Dialogues: ${dialoguesRead}`);
+    // Listen for dialogue sequence completions and trigger quest objectives
+    this.events.on('dialogueSequenceCompleted', (data: any) => {
+      const { dialogueId } = data;
+
+      // Check if this dialogue completes any quest objectives
+      const activeQuests = this.questManager!.getActiveQuests();
+      activeQuests.forEach((questStatus) => {
+        const quest = this.questsData[questStatus.questId];
+        if (quest) {
+          quest.objectives.forEach((objective) => {
+            if (objective.type === 'dialogue' && objective.targetId === dialogueId) {
+              this.questManager!.completeObjective(questStatus.questId, objective.id);
+            }
+          });
+        }
+      });
     });
-
-    this.hud.add(debugText);
   }
 
   private updateDepth(): void {
@@ -157,6 +177,9 @@ export class IslandScene extends Phaser.Scene {
   shutdown(): void {
     if (this.interactionManager) {
       this.interactionManager.shutdown();
+    }
+    if (this.questHUD) {
+      this.questHUD.shutdown();
     }
     this.events.off(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
   }
