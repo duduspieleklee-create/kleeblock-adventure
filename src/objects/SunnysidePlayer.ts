@@ -48,37 +48,82 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
     // Walk strip8 (frames 0-7): L(0) D(1) R(2) D(3) L(4) D(5) R(6) D(7)
     // Run strip8  (frames 0-7): same layout as walk
 
-    const idleDown  = [1, 3, 5, 7];
-    const idleSide  = [0, 4, 8];
-    const idleUp    = [2, 6];
-    const walkDown  = [1, 3, 5, 7];
-    const walkSide  = [0, 4];
-    const walkUp    = [2, 6];
+    const idleDown = [1, 3, 5, 7];
+    const idleSide = [0, 4, 8];
+    const idleUp = [2, 6];
+    const walkDown = [1, 3, 5, 7];
+    const walkSide = [0, 4];
+    const walkUp = [2, 6];
 
     // Idle
-    scene.anims.create({ key: 'ss_idle_down', frames: idleDown.map(f => ({ key: 'ss_idle', frame: f })), frameRate: 6, repeat: -1 });
-    scene.anims.create({ key: 'ss_idle_side', frames: idleSide.map(f => ({ key: 'ss_idle', frame: f })), frameRate: 6, repeat: -1 });
-    scene.anims.create({ key: 'ss_idle_up',   frames: idleUp.map(f => ({ key: 'ss_idle', frame: f })),   frameRate: 6, repeat: -1 });
+    scene.anims.create({
+      key: 'ss_idle_down',
+      frames: idleDown.map((f) => ({ key: 'ss_idle', frame: f })),
+      frameRate: 6,
+      repeat: -1,
+    });
+    scene.anims.create({
+      key: 'ss_idle_side',
+      frames: idleSide.map((f) => ({ key: 'ss_idle', frame: f })),
+      frameRate: 6,
+      repeat: -1,
+    });
+    scene.anims.create({
+      key: 'ss_idle_up',
+      frames: idleUp.map((f) => ({ key: 'ss_idle', frame: f })),
+      frameRate: 6,
+      repeat: -1,
+    });
 
     // Walk
-    scene.anims.create({ key: 'ss_walk_down', frames: walkDown.map(f => ({ key: 'ss_walk', frame: f })), frameRate: 10, repeat: -1 });
-    scene.anims.create({ key: 'ss_walk_side', frames: walkSide.map(f => ({ key: 'ss_walk', frame: f })), frameRate: 10, repeat: -1 });
-    scene.anims.create({ key: 'ss_walk_up',   frames: walkUp.map(f => ({ key: 'ss_walk', frame: f })),   frameRate: 10, repeat: -1 });
+    scene.anims.create({
+      key: 'ss_walk_down',
+      frames: walkDown.map((f) => ({ key: 'ss_walk', frame: f })),
+      frameRate: 10,
+      repeat: -1,
+    });
+    scene.anims.create({
+      key: 'ss_walk_side',
+      frames: walkSide.map((f) => ({ key: 'ss_walk', frame: f })),
+      frameRate: 10,
+      repeat: -1,
+    });
+    scene.anims.create({
+      key: 'ss_walk_up',
+      frames: walkUp.map((f) => ({ key: 'ss_walk', frame: f })),
+      frameRate: 10,
+      repeat: -1,
+    });
 
     // Run
-    scene.anims.create({ key: 'ss_run_down', frames: walkDown.map(f => ({ key: 'ss_run', frame: f })), frameRate: 14, repeat: -1 });
-    scene.anims.create({ key: 'ss_run_side', frames: walkSide.map(f => ({ key: 'ss_run', frame: f })), frameRate: 14, repeat: -1 });
-    scene.anims.create({ key: 'ss_run_up',   frames: walkUp.map(f => ({ key: 'ss_run', frame: f })),   frameRate: 14, repeat: -1 });
+    scene.anims.create({
+      key: 'ss_run_down',
+      frames: walkDown.map((f) => ({ key: 'ss_run', frame: f })),
+      frameRate: 14,
+      repeat: -1,
+    });
+    scene.anims.create({
+      key: 'ss_run_side',
+      frames: walkSide.map((f) => ({ key: 'ss_run', frame: f })),
+      frameRate: 14,
+      repeat: -1,
+    });
+    scene.anims.create({
+      key: 'ss_run_up',
+      frames: walkUp.map((f) => ({ key: 'ss_run', frame: f })),
+      frameRate: 14,
+      repeat: -1,
+    });
   }
 
   update(): void {
-    const movingLeft  = this.cursors.left.isDown  || this.wasd.left.isDown;
+    const movingLeft = this.cursors.left.isDown || this.wasd.left.isDown;
     const movingRight = this.cursors.right.isDown || this.wasd.right.isDown;
-    const movingUp    = this.cursors.up.isDown    || this.wasd.up.isDown;
-    const movingDown  = this.cursors.down.isDown  || this.wasd.down.isDown;
+    const movingUp = this.cursors.up.isDown || this.wasd.up.isDown;
+    const movingDown = this.cursors.down.isDown || this.wasd.down.isDown;
 
-    let vx = (movingLeft ? -1 : 0) + (movingRight ? 1 : 0);
-    let vy = (movingUp ? -1 : 0)   + (movingDown ? 1 : 0);
+    const vx = (movingLeft ? -1 : 0) + (movingRight ? 1 : 0);
+    const vy = (movingUp ? -1 : 0) + (movingDown ? 1 : 0);
 
     if (vx !== 0 && vy !== 0) {
       this.setVelocity(vx * this.speed * 0.707, vy * this.speed * 0.707);
