@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { applyCharacterBodyWhenReady } from './characterBody';
 
 export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -20,15 +21,8 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
     this.setScale(0.6);
     this.setOrigin(0.5, 0.5);
 
-    // Defer body sizing until the body is fully ready (next tick)
-    scene.events.once(Phaser.Scenes.Events.UPDATE, () => {
-      if (this.body && this.body instanceof Phaser.Physics.Arcade.Body) {
-        // 16x16 hitbox centered on the scaled sprite (96×64 @ 0.6 = 57.6×38.4)
-        this.body.updateBounds();
-        this.body.setSize(16, 16);
-        this.body.setOffset(28, 22);
-      }
-    });
+    // Feet-sized hitbox (narrower than a tile) — see characterBody.ts
+    applyCharacterBodyWhenReady(scene, this);
 
     this.createAnimations(scene);
 

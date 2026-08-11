@@ -107,6 +107,21 @@ export class IslandScene extends Phaser.Scene {
 
   private setupPhysics(map: Phaser.Tilemaps.Tilemap): void {
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+    // Visualize bodies + tile collision: open the game with ?debug=1
+    if (this.isPhysicsDebugEnabled()) {
+      this.physics.world.createDebugGraphic();
+      this.physics.world.drawDebug = true;
+    }
+  }
+
+  private isPhysicsDebugEnabled(): boolean {
+    try {
+      const value = new URLSearchParams(window.location.search).get('debug');
+      return value === '1' || value === 'true';
+    } catch {
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------------------

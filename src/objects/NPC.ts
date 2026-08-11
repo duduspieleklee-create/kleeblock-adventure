@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { applyCharacterBodyWhenReady } from './characterBody';
 
 export class NPC extends Phaser.Physics.Arcade.Sprite {
   private _dialogueId: string;
@@ -18,14 +19,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.setImmovable(true);
     this._dialogueId = dialogueId;
 
-    // Defer body sizing to first update tick (same as Player)
-    scene.events.once(Phaser.Scenes.Events.UPDATE, () => {
-      if (this.body && this.body instanceof Phaser.Physics.Arcade.Body) {
-        this.body.updateBounds();
-        this.body.setSize(16, 16);
-        this.body.setOffset(28, 22);
-      }
-    });
+    // Same feet hitbox as the player for consistent collision feel
+    applyCharacterBodyWhenReady(scene, this);
 
     // NPC idle animation (facing down, bobbing)
     scene.anims.create({
