@@ -7,6 +7,8 @@ npm install
 npm run dev
 ```
 
+**AI / agent handoff:** see **[AI_CONTEXT.md](./AI_CONTEXT.md)** for architecture, required skills, map contracts, and suggested next steps.
+
 ---
 
 ## Tiled map checklist
