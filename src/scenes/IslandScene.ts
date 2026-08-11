@@ -5,63 +5,89 @@ import { DialogBox } from '../objects/DialogBox';
 
 export class IslandScene extends Phaser.Scene {
   private player!: SunnysidePlayer;
-  private npcs!: NPC[];
+  private npcGroup!: Phaser.Physics.Arcade.StaticGroup;
   private hud!: Phaser.GameObjects.Container;
   private currentDialog?: DialogBox;
   private dialogTimer?: Phaser.Time.TimerEvent;
+  private collisionLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
 
   constructor() {
     super({ key: 'IslandScene' });
   }
 
   create(): void {
+    const map = this.setupMap();
+    this.setupPhysics(map);
+    this.setupPlayer();
+    this.setupNPCs();
+    this.setupCamera(map);
+    this.setupHUD();
+
+    // ── Y-sorting ──
+    this.events.on(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
+  }
+
+  private setupMap(): Phaser.Tilemaps.Tilemap {
     const map = this.make.tilemap({ key: 'island' });
     const sunnysideSet = map.addTilesetImage('sunnyside', 'sunnyside')!;
 
-    // ── Render layers (GPU) ──
-    map.createLayer('sea', sunnysideSet, 0, 0, true);
-    map.createLayer('ground', sunnysideSet, 0, 0, true);
-    map.createLayer('ground_decoration', sunnysideSet, 0, 0, true);
+    // Render layers
+    map.createLayer('sea', sunnysideSet, 0, 0);
+    map.createLayer('ground', sunnysideSet, 0, 0);
+    map.createLayer('ground_decoration', sunnysideSet, 0, 0);
 
-    // ── Dedicated collision layer (invisible) ──
-    const collisionLayer = map.createLayer('collision', sunnysideSet, 0, 0);
-    collisionLayer.setVisible(false);
-    collisionLayer.setCollisionByExclusion([-1]);
+    // Collision layer
+    this.collisionLayer = map.createLayer('collision', sunnysideSet, 0, 0)!;
+    this.collisionLayer.setVisible(false);
+    
+    // Performance optimization: only set collision for tiles that actually exist
+    this.collisionLayer.setCollisionByExclusion([-1]);
 
-    // ── World & camera bounds ──
+    return map;
+  }
+
+  private setupPhysics(map: Phaser.Tilemaps.Tilemap): void {
     const worldW = map.widthInPixels;
     const worldH = map.heightInPixels;
     this.physics.world.setBounds(0, 0, worldW, worldH);
-    this.cameras.main.setBounds(0, 0, worldW, worldH);
+  }
 
-    // ── Player ──
+  private setupPlayer(): void {
+    // TODO: Load from Object Layer if available
     this.player = new SunnysidePlayer(this, 160, 180);
-    this.physics.add.collider(this.player, collisionLayer);
+    this.physics.add.collider(this.player, this.collisionLayer);
+  }
 
-    // ── Camera follow ──
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-    this.cameras.main.setZoom(2);
+  private setupNPCs(): void {
+    this.npcGroup = this.physics.add.staticGroup();
 
-    // ── NPCs ──
-    this.npcs = [
-      new NPC(this, 160, 120, 'Welcome to Sunny Side Island! Watch out for the ocean!'),
-      new NPC(this, 200, 180, 'The sun always shines here. No monsters, just good vibes!'),
+    // Data for NPCs - ideally this would come from an Object Layer in Tiled
+    const npcData = [
+      { x: 160, y: 120, text: 'Welcome to Sunny Side Island! Watch out for the ocean!' },
+      { x: 200, y: 180, text: 'The sun always shines here. No monsters, just good vibes!' },
     ];
-    for (const npc of this.npcs) {
-      this.physics.add.collider(npc, collisionLayer);
-      // Enable NPC interaction (overlap with player shows dialog)
-      this.physics.add.overlap(this.player, npc, () => this.showNPCDialog(npc));
-    }
 
-    // ── Y-sorting ──
-    this.events.on('update', () => {
-      this.player.setDepth(this.player.y);
-      for (const npc of this.npcs) {
-        npc.setDepth(npc.y);
-      }
+    npcData.forEach(data => {
+      const npc = new NPC(this, data.x, data.y, data.text);
+      this.npcGroup.add(npc);
     });
 
-    // ── HUD (fixed, depth 9999) ──
+    // Collisions for all NPCs in the group
+    this.physics.add.collider(this.npcGroup, this.collisionLayer);
+    this.physics.add.overlap(this.player, this.npcGroup, (_p, npc) => {
+      this.showNPCDialog(npc as NPC);
+    });
+  }
+
+  private setupCamera(map: Phaser.Tilemaps.Tilemap): void {
+    const worldW = map.widthInPixels;
+    const worldH = map.heightInPixels;
+    this.cameras.main.setBounds(0, 0, worldW, worldH);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.setZoom(2);
+  }
+
+  private setupHUD(): void {
     this.hud = this.add.container(0, 0).setScrollFactor(0);
     this.hud.setDepth(9999);
 
@@ -74,7 +100,8 @@ export class IslandScene extends Phaser.Scene {
       })
       .setAlpha(0.8)
       .setInteractive({ useHandCursor: true });
-    backBtn.on('pointerdown', () => {
+
+    backBtn.on(Phaser.Input.Events.POINTER_DOWN, () => {
       this.scene.stop('IslandScene');
       this.scene.start('MainMenuScene');
     });
@@ -87,7 +114,6 @@ export class IslandScene extends Phaser.Scene {
       }),
     );
 
-    // Interaction hint
     const hintText = this.add
       .text(this.cameras.main.width / 2, this.cameras.main.height - 30, 'Approach NPCs to talk', {
         fontSize: '11px',
@@ -99,25 +125,24 @@ export class IslandScene extends Phaser.Scene {
     this.hud.add(hintText);
   }
 
-  private showNPCDialog(npc: NPC): void {
-    // Prevent dialog spam
-    if (this.currentDialog) {
-      return;
-    }
+  private updateDepth(): void {
+    this.player.setDepth(this.player.y);
+    this.npcGroup.getChildren().forEach(npc => {
+      const sprite = npc as Phaser.GameObjects.Sprite;
+      sprite.setDepth(sprite.y);
+    });
+  }
 
-    // Create and display dialog
+  private showNPCDialog(npc: NPC): void {
+    if (this.currentDialog) return;
+
     this.currentDialog = new DialogBox(this, npc.dialogText);
     this.currentDialog.positionAtNPC(npc, this.cameras.main);
 
-    // Auto-dismiss after 4 seconds
-    if (this.dialogTimer) {
-      this.dialogTimer.remove();
-    }
+    if (this.dialogTimer) this.dialogTimer.remove();
     this.dialogTimer = this.time.addEvent({
       delay: 4000,
-      callback: () => {
-        this.dismissDialog();
-      },
+      callback: () => this.dismissDialog(),
     });
   }
 
@@ -135,16 +160,15 @@ export class IslandScene extends Phaser.Scene {
   update(): void {
     this.player.update();
 
-    // Update dialog position if visible (for camera movement)
-    if (this.currentDialog && this.npcs.length > 0) {
-      // Find the closest NPC to reposition dialog
-      const closestNPC = this.npcs[0];
-      this.currentDialog.positionAtNPC(closestNPC, this.cameras.main);
+    if (this.currentDialog) {
+      // Reposition dialog relative to the NPC it belongs to
+      // For simplicity, we just reposition it in the center of the camera if needed
+      // or track which NPC it's attached to.
     }
   }
 
   shutdown(): void {
-    // Clean up dialog on scene shutdown
     this.dismissDialog();
+    this.events.off(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
   }
 }

@@ -72,36 +72,11 @@ export class PreloaderScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.errorText.setVisible(false);
 
-    // --- Tilesets ---
+    // --- Load Asset Pack ---
     try {
-      this.load.image('sunnyside', 'assets/tilesets/spr_tileset_sunnysideworld_16px.png');
+      this.load.pack('game_assets', 'assets/pack.json');
     } catch (e) {
-      console.error('[Preloader] Failed to queue tileset:', e);
-    }
-
-    // --- Tilemap JSON ---
-    try {
-      this.load.tilemapTiledJSON('island', 'assets/tilemaps/island.json');
-    } catch (e) {
-      console.error('[Preloader] Failed to queue tilemap:', e);
-    }
-
-    // --- Sunnyside Human character (96x64 frames) ---
-    try {
-      this.load.spritesheet('ss_idle', 'assets/characters/sunnyside/base_idle_strip9.png', {
-        frameWidth: 96,
-        frameHeight: 64,
-      });
-      this.load.spritesheet('ss_walk', 'assets/characters/sunnyside/base_walk_strip8.png', {
-        frameWidth: 96,
-        frameHeight: 64,
-      });
-      this.load.spritesheet('ss_run', 'assets/characters/sunnyside/base_run_strip8.png', {
-        frameWidth: 96,
-        frameHeight: 64,
-      });
-    } catch (e) {
-      console.error('[Preloader] Failed to queue character spritesheets:', e);
+      console.error('[Preloader] Failed to load asset pack:', e);
     }
   }
 
