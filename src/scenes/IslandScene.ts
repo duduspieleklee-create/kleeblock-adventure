@@ -24,17 +24,30 @@ export class IslandScene extends Phaser.Scene {
     const groundLayer = map.createLayer('ground', sunnysideSet, 0, 0);
     const decorLayer = map.createLayer('ground_decoration', sunnysideSet, 0, 0);
 
-    // Ground collision (exclude empty tiles)
-    groundLayer.setCollisionByExclusion([0, -1]);
+    // --- Collision setup ---
+    // Ground: all non-empty tiles are solid
+    groundLayer.setCollisionByExclusion([-1, 0]);
 
-    // Sea collision: enable on all sea GIDs, then carve out where ground tiles exist
-    const seaCollisionGids = [1164,1165,1166,1167, 1228,1229,1230,1231, 1292,1293,1294,1295, 1356,1357,1358,1359];
-    seaLayer.setCollision(seaCollisionGids);
-    seaLayer.forEachTile((tile, x, y) => {
-      const g = groundLayer.getTileAt(x, y);
-      if (g && g.index !== 0) {
-        tile.setCollision(false); // ground above = walkable
+    // Sea: ALL tiles collide, then carve out where ground exists
+    seaLayer.setCollisionByExclusion([-1]); // every sea tile collides
+
+    // Now walk the ground layer and disable sea collision under each ground tile
+    groundLayer.forEachTile((tile, x, y) => {
+      if (tile.index > 0) {
+        const seaTile = seaLayer.getTileAt(x, y);
+        if (seaTile) {
+          seaTile.setCollision(false);
+        }
       }
+    });
+
+    // Debug: visualize sea collision tiles (red = solid water)
+    const debugGraphics = this.add.graphics();
+    debugGraphics.setDepth(100);
+    seaLayer.renderDebug(debugGraphics, {
+      tileColor: null,
+      collidingTileColor: new Phaser.Display.Color(255, 0, 0, 80),
+      faceColor: null,
     });
 
     // Set world bounds to match tilemap (20×20 tiles × 16px = 320×320)
