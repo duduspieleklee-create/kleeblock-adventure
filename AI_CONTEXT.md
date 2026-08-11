@@ -17,6 +17,8 @@
 | Map editor | Tiled (JSON export) |
 | Art style | SunnySide World 16×16 pixel tiles + character strips |
 | Default branch | `master` |
+| Active feature branch | `feature/improved-quest-ui` |
+| Open PR | https://github.com/duduspieleklee-create/kleeblock-adventure/pull/12 |
 
 ```bash
 npm install
@@ -25,7 +27,7 @@ npm run typecheck
 npm run lint
 ```
 
-Optional physics debug (if implemented on the branch you are on): `?debug=1` or `?debug=true`.
+Debug physics overlay: open the game with `?debug=1` or `?debug=true`.
 
 ---
 
@@ -84,10 +86,10 @@ public/assets/
 ### Key runtime flows
 
 1. **Boot → Preloader → MainMenu → IslandScene**
-2. **IslandScene** loads map, spawns player/NPCs, starts `island_explorer` quest.
-3. **InteractionManager** detects nearby NPC → DialogBox → emits `dialogueSequenceCompleted`.
-4. **IslandScene** → `QuestManager.completeObjective` for matching dialogue targets.
-5. **QuestHUD** listens to QuestManager events → refreshes tracker (+ spatial `!` markers when wired).
+2. **IslandScene** loads map, spawns player/NPCs from Tiled `objects` layer, starts `island_explorer` quest.
+3. **InteractionManager** detects nearby NPC → shows DialogBox → on sequence end emits `dialogueSequenceCompleted`.
+4. **IslandScene** listens → `QuestManager.completeObjective` for matching dialogue targets.
+5. **QuestHUD** listens to QuestManager events → refreshes left tracker + spatial `!` markers.
 
 ### Depth convention (IslandScene)
 
@@ -113,16 +115,15 @@ Entities use `DEPTH.ENTITIES + y * 0.01` for Y-sorting.
 Tileset name in Tiled + code: **`sunnyside`**.  
 Solid tiles need custom property **`collides: true`** (bool) on the **tileset tile** (not only the layer).
 
-### Objects layer (recommended)
-
-Prefer a Tiled `objects` layer for spawns:
+### Objects layer (`objects`)
 
 | Object | `type` | Properties | Used for |
 |--------|--------|------------|----------|
 | `player_spawn` | `spawn` | `role: player` | Player start |
-| `*_npc` | `npc` | `dialogueId: ...` | NPC spawn |
+| `welcome_npc` | `npc` | `dialogueId: welcome_npc` | NPC spawn |
+| `vibes_npc` | `npc` | `dialogueId: vibes_npc` | NPC spawn |
 
-If the layer is not on `master` yet, NPC positions may still be hard-coded in `IslandScene.setupNPCs()`.
+Add more NPCs only in Tiled (type `npc` + `dialogueId` property). Code already iterates the layer.
 
 ### Data JSON
 
@@ -133,7 +134,7 @@ Keep `dialogueId` / `targetId` strings in sync across map objects, dialogues, an
 
 ---
 
-## 5. UI System (current state on master)
+## 5. UI System (current state)
 
 ### QuestHUD (`src/ui/QuestHUD.ts`)
 
@@ -141,52 +142,62 @@ Keep `dialogueId` / `targetId` strings in sync across map objects, dialogues, an
 - **Book icon:** right side, clickable; toggles full log.
 - **Key `Q`:** same toggle.
 - **Full Questbook:** centered two-page modal (Active / Completed left, details right).
-- **No external UI sprites** — procedural Graphics/Text only.
+- **No external UI sprites** — everything is procedural Graphics/Text. No extra assets required.
 
 ### Spatial markers (`NPC.setQuestMarker`)
 
-- Golden `!` above NPCs targeting incomplete `dialogue` objectives (when IslandScene wires `updateQuestMarkers`).
+- Golden `!` above NPCs that are targets of incomplete `dialogue` objectives.
+- Updated on `questStarted` / `objectiveCompleted` / `questCompleted`.
 
 ### DialogBox
 
 - Screen-space, clamped to camera; typewriter effect.
-- Not yet a fixed bottom dialogue panel (see next steps).
+- Still used by InteractionManager (not yet a fixed bottom dialogue panel).
 
 ---
 
 ## 6. Design Decisions Already Made
 
-1. Hybrid UI: non-diegetic tracker + spatial `!` + modal Questbook.
+1. Hybrid UI: non-diegetic tracker + spatial `!` markers + modal Questbook.
 2. GPU layers for visuals; dedicated CPU collision layer.
-3. Pixel-art readability: high contrast, edge-anchored HUD, camera zoom 2.
-4. Quest progress via `QuestManager` + `GameState`.
-5. Shared character feet hitbox helper where present (`characterBody.ts`).
+3. NPCs and player spawn driven by Tiled objects (not hard-coded coordinates).
+4. Quest progress persisted via `GameState` (JSON-serialized under key `quests` — note type handling if extending).
+5. Pixel-art readability: high contrast, edge-anchored HUD, zoom 2 on camera.
 
 ---
 
 ## 7. Suggested Next Steps (priority order)
 
-### High value
+### High value / natural follow-ups
 
-1. **Bottom persistent dialogue panel** — always-readable NPC text; pause movement while open.
-2. **Location objectives** — implement `type: "location"` (e.g. `ocean_watch` in quests.json).
-3. **Tiled objects layer for spawns** — if not merged yet: player + NPCs from map JSON.
-4. **Physics debug** — `?debug=1` collision tile + body overlay.
-5. **Questbook click-to-select** — pick Active quest on left → details on right.
-6. **Multi-quest tracker** — show more than one active quest in the left panel.
+1. **Bottom persistent dialogue panel**  
+   Replace or augment floating DialogBox so NPC text is always readable (original user request). Keep typewriter; anchor bottom center; pause player input while open.
+
+2. **Location objectives**  
+   `quests.json` already has `ocean_watch` with `type: "location"`. Implement zone checks (overlap rectangles from Tiled objects or tile regions) and call `completeObjective`.
+
+3. **Quest selection in Questbook**  
+   Click Active quest on left page → show its details on the right (currently only first active is shown).
+
+4. **Multiple simultaneous trackers**  
+   Left panel currently shows one active quest; extend to a short stack or scrollable list.
+
+5. **Merge PR #12** after playtest, then branch for the next feature.
 
 ### Medium
 
-7. Interaction prompt when near NPC (`E` / face button).
-8. Save/load via localStorage on GameState.
-9. Second map / zone transition.
-10. Audio (quest complete, dialogue advance, UI).
-11. Optional bitmap/pixel font for UI.
+6. **Player spawn / NPC polish** — facing direction, idle variety, interaction prompt (`E` / face button) above NPC when in range.
+7. **Save/load** — expand GameState to localStorage; restore quest HUD on load.
+8. **Second map / zone transition** — second Tiled JSON + scene switch or same scene map swap.
+9. **Audio** — SFX for quest complete, dialogue advance, UI open/close.
+10. **Custom pixel font** — optional bitmap font for sharper UI at zoom 2.
 
-### Polish
+### Lower / polish
 
-12. Questbook open/close tween; marker variants (`?` vs `!`).
+11. Questbook open/close tween; book icon open/closed art.
+12. Marker variants (`?` for available quest, `!` for in-progress).
 13. CI: typecheck + lint on PR.
+14. Align with PR #8 (tighter feet hitboxes) if still open — test collision after merge.
 
 ---
 
@@ -196,23 +207,24 @@ Keep `dialogueId` / `targetId` strings in sync across map objects, dialogues, an
 - Keep collision on a non-GPU layer.
 - Match Tiled layer and tileset names exactly.
 - Use QuestManager events instead of polling where possible.
-- Prefer feature branches + PRs with a short test checklist.
+- Prefer feature branches + PR descriptions that list test steps.
 - Run `npm run typecheck` after TypeScript edits when possible.
 
 **Don’t**
 - Put Arcade colliders on `TilemapGPULayer`.
+- Hard-code NPC positions if the objects layer can express them.
+- Add large binary assets without need (UI is Graphics-based by design).
 - Break the `dialogueId` / quest `targetId` naming contract.
-- Add large binary UI assets unless requested (UI is Graphics-based).
 - Rewrite working systems wholesale when a small extension suffices.
 
 ---
 
-## 9. Quick File Index
+## 9. Quick File Index for Common Tasks
 
 | Task | Primary files |
 |------|----------------|
-| HUD / Questbook | `src/ui/QuestHUD.ts` |
-| Quest rules | `src/managers/QuestManager.ts`, `public/assets/data/quests.json` |
+| Change HUD layout / Questbook | `src/ui/QuestHUD.ts` |
+| Quest rules / progress | `src/managers/QuestManager.ts`, `public/assets/data/quests.json` |
 | Dialogue text | `public/assets/data/dialogues.json`, `src/objects/DialogBox.ts` |
 | NPC interaction | `src/managers/InteractionManager.ts`, `src/objects/NPC.ts` |
 | Map / collision / spawns | `public/assets/tilemaps/island.json`, `src/scenes/IslandScene.ts` |
@@ -221,15 +233,17 @@ Keep `dialogueId` / `targetId` strings in sync across map objects, dialogues, an
 
 ---
 
-## 10. Testing Checklist
+## 10. Testing Checklist (before claiming done)
 
 - [ ] Game boots to IslandScene without console errors
 - [ ] Player moves; blocked by collision tiles
-- [ ] NPCs present; dialogue completes objectives
-- [ ] Left tracker updates; book icon / `Q` opens Questbook
-- [ ] Spatial `!` markers behave correctly when enabled
+- [ ] `?debug=1` shows orange colliding tiles + body outlines
+- [ ] NPCs appear at Tiled object positions
+- [ ] Talk to NPCs → dialogue runs → objectives complete
+- [ ] Left tracker updates; `!` markers appear/disappear correctly
+- [ ] `Q` and book icon open/close Questbook
 - [ ] Quest complete notification shows
 
 ---
 
-*Maintained for AI handoff. Update this file when architecture or contracts change.*
+*Last updated: 2026-08-11 — feature branch `feature/improved-quest-ui` (Quest UI, spatial markers, Tiled objects, physics debug, responsive UI scaling).*

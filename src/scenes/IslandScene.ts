@@ -18,6 +18,7 @@ export class IslandScene extends Phaser.Scene {
   private player!: SunnysidePlayer;
   private npcGroup!: Phaser.Physics.Arcade.StaticGroup;
   private hud!: Phaser.GameObjects.Container;
+  private map!: Phaser.Tilemaps.Tilemap;
 
   // Visual layers – prefer TilemapGPULayer when available
   private seaLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
@@ -49,12 +50,14 @@ export class IslandScene extends Phaser.Scene {
       this.scene.start('MainMenuScene');
       return;
     }
+    this.map = map;
 
     this.setupPhysics(map);
     this.setupPlayer();
     this.setupNPCs();
     this.setupCamera(map);
     this.setupHUD();
+    this.setupDebug();
 
     // Interaction + quest systems
     const npcs = this.npcGroup.getChildren() as NPC[];
@@ -137,11 +140,33 @@ export class IslandScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------------------
-  // Player & NPCs
+  // Player & NPCs (from Tiled objects layer)
   // ---------------------------------------------------------------------------
 
+  private getObjectProperty(obj: Phaser.Types.Tilemaps.TiledObject, key: string): string | undefined {
+    const props = obj.properties as Array<{ name: string; value: unknown }> | undefined;
+    if (!props) return undefined;
+    const found = props.find((p) => p.name === key);
+    return found ? String(found.value) : undefined;
+  }
+
   private setupPlayer(): void {
-    this.player = new SunnysidePlayer(this, 160, 180);
+    // Prefer spawn point from Tiled objects layer
+    let x = 160;
+    let y = 180;
+
+    const objectLayer = this.map.getObjectLayer('objects');
+    if (objectLayer) {
+      const spawn = objectLayer.objects.find(
+        (o) => o.type === 'spawn' || o.name === 'player_spawn',
+      );
+      if (spawn && spawn.x !== undefined && spawn.y !== undefined) {
+        x = spawn.x;
+        y = spawn.y;
+      }
+    }
+
+    this.player = new SunnysidePlayer(this, x, y);
     this.player.setDepth(DEPTH.ENTITIES);
     this.physics.add.collider(this.player, this.collisionLayer);
   }
@@ -149,15 +174,33 @@ export class IslandScene extends Phaser.Scene {
   private setupNPCs(): void {
     this.npcGroup = this.physics.add.staticGroup();
 
-    const npcData = [
-      { x: 160, y: 120, dialogueId: 'welcome_npc' },
-      { x: 200, y: 180, dialogueId: 'vibes_npc' },
-    ];
+    const objectLayer = this.map.getObjectLayer('objects');
+    const npcObjects =
+      objectLayer?.objects.filter((o) => o.type === 'npc' || this.getObjectProperty(o, 'dialogueId')) ??
+      [];
 
-    for (const data of npcData) {
-      const npc = new NPC(this, data.x, data.y, data.dialogueId);
-      npc.setDepth(DEPTH.ENTITIES);
-      this.npcGroup.add(npc);
+    if (npcObjects.length === 0) {
+      // Fallback to hard-coded positions if objects layer is missing
+      console.warn('[IslandScene] No NPCs found in objects layer – using fallback positions');
+      const fallback = [
+        { x: 160, y: 120, dialogueId: 'welcome_npc' },
+        { x: 200, y: 180, dialogueId: 'vibes_npc' },
+      ];
+      for (const data of fallback) {
+        const npc = new NPC(this, data.x, data.y, data.dialogueId);
+        npc.setDepth(DEPTH.ENTITIES);
+        this.npcGroup.add(npc);
+      }
+    } else {
+      for (const obj of npcObjects) {
+        const dialogueId =
+          this.getObjectProperty(obj, 'dialogueId') || obj.name || 'unknown';
+        const x = obj.x ?? 0;
+        const y = obj.y ?? 0;
+        const npc = new NPC(this, x, y, dialogueId);
+        npc.setDepth(DEPTH.ENTITIES);
+        this.npcGroup.add(npc);
+      }
     }
 
     this.physics.add.collider(this.npcGroup, this.collisionLayer);
@@ -206,6 +249,32 @@ export class IslandScene extends Phaser.Scene {
         color: '#888888',
       }),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Physics Debug (?debug=1)
+  // ---------------------------------------------------------------------------
+
+  private setupDebug(): void {
+    const params = new URLSearchParams(window.location.search);
+    const debugEnabled =
+      params.get('debug') === '1' || params.get('debug') === 'true';
+
+    if (!debugEnabled) return;
+
+    // Show colliding tiles
+    const debugGraphics = this.add.graphics().setAlpha(0.6).setDepth(50);
+    this.collisionLayer.renderDebug(debugGraphics, {
+      tileColor: null,
+      collidingTileColor: new Phaser.Display.Color(243, 134, 48, 200),
+      faceColor: new Phaser.Display.Color(40, 39, 37, 255),
+    });
+
+    // Enable Arcade Physics body outlines
+    this.physics.world.createDebugGraphic();
+    this.physics.world.drawDebug = true;
+
+    console.log('[IslandScene] Physics debug enabled (?debug=1)');
   }
 
   // ---------------------------------------------------------------------------
