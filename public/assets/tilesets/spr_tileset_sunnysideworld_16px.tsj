@@ -1,0 +1,15 @@
+{
+  "columns": 64,
+  "image": "spr_tileset_sunnysideworld_16px.png",
+  "imageheight": 1024,
+  "imagewidth": 1024,
+  "margin": 0,
+  "name": "spr_tileset_sunnysideworld_16px",
+  "spacing": 0,
+  "tilecount": 4096,
+  "tiledversion": "1.11.1-99-gec89c545",
+  "tileheight": 16,
+  "tilewidth": 16,
+  "type": "tileset",
+  "version": "1.10"
+}

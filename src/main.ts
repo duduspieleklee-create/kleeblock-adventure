@@ -3,6 +3,7 @@ import { BootScene } from './scenes/BootScene';
 import { PreloaderScene } from './scenes/PreloaderScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { GameScene } from './scenes/GameScene';
+import { IslandScene } from './scenes/IslandScene';
 
 // Global error catchers — turn silent freezes into console logs
 window.onerror = (msg, _src, _line, _col, err) => {
@@ -29,7 +30,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, PreloaderScene, MainMenuScene, GameScene],
+  scene: [BootScene, PreloaderScene, MainMenuScene, GameScene, IslandScene],
 };
 
 const game = new Phaser.Game(config);

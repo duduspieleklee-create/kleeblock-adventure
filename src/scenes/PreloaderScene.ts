@@ -28,9 +28,11 @@ export class PreloaderScene extends Phaser.Scene {
 
     // --- Tilesets ---
     this.load.image('floors', 'assets/tilesets/floors.png');
+    this.load.image('sunnyside', 'assets/tilesets/spr_tileset_sunnysideworld_16px.png');
 
     // --- Tilemap JSON ---
     this.load.tilemapTiledJSON('forest', 'assets/tilemaps/forest_beginner.json');
+    this.load.tilemapTiledJSON('island', 'assets/tilemaps/island.json');
 
     // --- Player character spritesheets (32px frame width, 16px height) ---
     this.load.spritesheet('player_idle_down', 'assets/characters/player_idle_down.png', { frameWidth: 16, frameHeight: 16 });
