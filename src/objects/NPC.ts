@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
+import { applyCharacterBodyWhenReady } from './characterBody';
 
 export class NPC extends Phaser.Physics.Arcade.Sprite {
   private _dialogueId: string;
+  private questMarker?: Phaser.GameObjects.Text;
+  private markerTween?: Phaser.Tweens.Tween;
 
   get dialogueId(): string {
     return this._dialogueId;
@@ -18,14 +21,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.setImmovable(true);
     this._dialogueId = dialogueId;
 
-    // Defer body sizing to first update tick (same as Player)
-    scene.events.once(Phaser.Scenes.Events.UPDATE, () => {
-      if (this.body && this.body instanceof Phaser.Physics.Arcade.Body) {
-        this.body.updateBounds();
-        this.body.setSize(16, 16);
-        this.body.setOffset(28, 22);
-      }
-    });
+    // Same feet hitbox as the player for consistent collision feel
+    applyCharacterBodyWhenReady(scene, this);
 
     // NPC idle animation (facing down, bobbing)
     scene.anims.create({
@@ -41,5 +38,59 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     });
 
     this.anims.play('npc_idle');
+  }
+
+  /**
+   * Show or hide the spatial quest marker (!)
+   */
+  setQuestMarker(visible: boolean, color: string = '#ffcc00'): void {
+    if (visible) {
+      if (!this.questMarker) {
+        this.questMarker = this.scene.add
+          .text(this.x, this.y - 28, '!', {
+            fontSize: '16px',
+            color: color,
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3,
+          })
+          .setOrigin(0.5)
+          .setDepth(20);
+
+        // Gentle bobbing animation
+        this.markerTween = this.scene.tweens.add({
+          targets: this.questMarker,
+          y: this.y - 34,
+          duration: 600,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      } else {
+        this.questMarker.setVisible(true);
+        this.questMarker.setColor(color);
+      }
+    } else if (this.questMarker) {
+      this.questMarker.setVisible(false);
+    }
+  }
+
+  /**
+   * Keep marker positioned above the NPC (call in update if NPC can move)
+   */
+  updateQuestMarkerPosition(): void {
+    if (this.questMarker && this.questMarker.visible) {
+      this.questMarker.setPosition(this.x, this.questMarker.y);
+    }
+  }
+
+  destroy(fromScene?: boolean): void {
+    if (this.markerTween) {
+      this.markerTween.destroy();
+    }
+    if (this.questMarker) {
+      this.questMarker.destroy();
+    }
+    super.destroy(fromScene);
   }
 }
