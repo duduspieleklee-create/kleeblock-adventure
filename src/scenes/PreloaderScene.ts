@@ -21,6 +21,21 @@ export class PreloaderScene extends Phaser.Scene {
       bar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
     });
 
+    // Fallback: auto-advance if loading stalls (>10s) or fails
+    this.load.on('error', (_file: unknown, _error: unknown) => {
+      console.error('[Preloader] Asset load failed — continuing anyway');
+    });
+
+    this.time.addEvent({
+      delay: 10_000,
+      callback: () => {
+        if (this.scene.isActive('PreloaderScene')) {
+          console.warn('[Preloader] Timed out — forcing menu');
+          this.scene.start('MainMenuScene');
+        }
+      },
+    });
+
     this.add.text(width / 2, height / 2 + 40, 'Loading...', {
       fontSize: '16px',
       color: '#aaaaaa',

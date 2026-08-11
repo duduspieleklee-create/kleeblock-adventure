@@ -19,13 +19,16 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.setScale(0.6);
     this.setOrigin(0.5, 0.5);
-    this.setDepth(10);
 
-    // Compact 16x16 hitbox centered on sprite
-    if (this.body) {
-      this.body.setSize(16, 16);
-      this.body.setOffset(40, 48);
-    }
+    // Defer body sizing until the body is fully ready (next tick)
+    scene.events.once(Phaser.Scenes.Events.UPDATE, () => {
+      if (this.body && this.body instanceof Phaser.Physics.Arcade.Body) {
+        // 16x16 hitbox centered on the scaled sprite (96×64 @ 0.6 = 57.6×38.4)
+        this.body.updateBounds();
+        this.body.setSize(16, 16);
+        this.body.setOffset(28, 22);
+      }
+    });
 
     this.createAnimations(scene);
 
@@ -89,8 +92,9 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
     else if (vy < 0) this.lastDir = 'up';
     else if (vx !== 0) this.lastDir = 'side';
 
-    if (vx < 0) this.setFlipX(false);
-    if (vx > 0) this.setFlipX(true);
+    // Flip: sprite faces right by default, so flip when moving left
+    if (vx < 0) this.setFlipX(true);
+    if (vx > 0) this.setFlipX(false);
 
     if (isMoving) {
       const anim = `ss_walk_${this.lastDir}`;
