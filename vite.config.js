@@ -5,13 +5,15 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Auto-pick latest git tag as version
+// Auto-pick latest git tag as version (called at server start, never cached)
 function getGitTag() {
   try {
-    return execSync('git -C . tag --sort=-creatordate | head -1', {
+    const v = execSync('git -C . tag --sort=-creatordate | head -1', {
       cwd: __dirname,
       encoding: 'utf-8',
     }).trim();
+    console.log('GAME_VERSION resolved:', v);
+    return v;
   } catch {
     return '0.0.0';
   }
