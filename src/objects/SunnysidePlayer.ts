@@ -10,7 +10,6 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
   };
   private speed = 80;
   private lastDir: 'down' | 'side' | 'up' = 'down';
-  private currentAction: 'idle' | 'walk' = 'idle';
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, 'ss_idle', 1); // start with down-facing idle frame
