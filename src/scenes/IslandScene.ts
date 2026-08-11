@@ -24,15 +24,16 @@ export class IslandScene extends Phaser.Scene {
     const groundLayer = map.createLayer('ground', sunnysideSet, 0, 0);
     const decorLayer = map.createLayer('ground_decoration', sunnysideSet, 0, 0);
 
-    // Collision on ground layer only (exclude empty tiles)
+    // Ground collision (exclude empty tiles)
     groundLayer.setCollisionByExclusion([0, -1]);
 
-    // Sea is solid — carve out only where ground exists
-    seaLayer.setCollision([]); // start with nothing colliding
+    // Sea collision: enable on all sea GIDs, then carve out where ground tiles exist
+    const seaCollisionGids = [1164,1165,1166,1167, 1228,1229,1230,1231, 1292,1293,1294,1295, 1356,1357,1358,1359];
+    seaLayer.setCollision(seaCollisionGids);
     seaLayer.forEachTile((tile, x, y) => {
-      const groundTile = groundLayer.getTileAt(x, y);
-      if (!groundTile || groundTile.index === 0) {
-        tile.setCollision(true); // water blocks movement
+      const g = groundLayer.getTileAt(x, y);
+      if (g && g.index !== 0) {
+        tile.setCollision(false); // ground above = walkable
       }
     });
 
