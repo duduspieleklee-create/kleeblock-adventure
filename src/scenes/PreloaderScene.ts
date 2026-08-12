@@ -93,7 +93,6 @@ export class PreloaderScene extends Phaser.Scene {
 
     // Tilemaps
     this.load.tilemapTiledJSON(AssetKeys.Tilemaps.ISLAND, 'assets/tilemaps/island.json');
-    this.load.tilemapTiledJSON(AssetKeys.Tilemaps.ISLAND_EXPANDED, 'assets/tilemaps/island_expanded.json');
 
     // Data
     this.load.json(AssetKeys.Data.DIALOGUES, 'assets/data/dialogues.json');
