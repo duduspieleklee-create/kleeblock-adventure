@@ -3,25 +3,29 @@ import { QuestManager, Quest } from '../managers/QuestManager';
 import { QuestHUD } from '../ui/QuestHUD';
 import { TEXT_STYLES, UI_CONFIG } from '../ui/UIConstants';
 import { InputEvents } from '../input/InputEvents';
+import { DeviceDetector } from '../input/DeviceDetector';
+import { TouchButton } from '../ui/TouchButton';
+import { getUIAnchors, TOUCH_TARGET_MIN } from '../ui/UIScale';
 
 export type UISceneInitData = {
   questManager: QuestManager;
   questsData: Record<string, Quest>;
-  /** Scene key that owns the world (for returning to menu). */
   worldSceneKey?: string;
 };
 
 /**
- * Screen-space UI only — never follows the world camera.
- * Owns Quest HUD, chrome (menu button, version), resize layout.
- * Communicates with IslandScene via events only.
+ * Screen-space UI — QuestHUD, chrome, mobile action buttons.
+ * Layout only on RESIZE (no per-frame scaling).
  */
 export class UIScene extends Phaser.Scene {
   private questHUD?: QuestHUD;
   private backBtn?: Phaser.GameObjects.Text;
   private versionText?: Phaser.GameObjects.Text;
+  private interactBtn?: TouchButton;
+  private questbookBtn?: TouchButton;
   private worldSceneKey = 'IslandScene';
   private questManager?: QuestManager;
+  private showMobileControls = false;
 
   constructor() {
     super({ key: 'UIScene' });
@@ -41,23 +45,21 @@ export class UIScene extends Phaser.Scene {
       return;
     }
 
-    // Independent camera: identity view so UI is screen-fixed
     this.cameras.main.setScroll(0, 0);
     this.cameras.main.setZoom(1);
 
-    this.questHUD = new QuestHUD(this, questManager, questsData);
+    this.showMobileControls = DeviceDetector.isTouchCapable(this.game);
 
+    this.questHUD = new QuestHUD(this, questManager, questsData);
     this.createChrome();
+    this.createMobileControls();
     this.relayout();
 
     this.scale.on(Phaser.Scale.Events.RESIZE, this.relayout, this);
 
-    // World may emit input commands on the game-wide registry or world scene;
-    // listen on this scene AND forward from world via events.
     this.events.on(InputEvents.OPEN_QUESTBOOK, this.onOpenQuestbook, this);
     this.events.on(InputEvents.CANCEL, this.onCancel, this);
 
-    // Bridge: IslandScene emits on its own event bus — also listen on the world scene
     const world = this.scene.get(this.worldSceneKey);
     if (world) {
       world.events.on(InputEvents.OPEN_QUESTBOOK, this.onOpenQuestbook, this);
@@ -65,7 +67,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     if (import.meta.env.DEV) {
-      console.log('[UIScene] ready (screen-fixed UI)');
+      console.log('[UIScene] ready; mobile controls:', this.showMobileControls);
     }
   }
 
@@ -82,9 +84,7 @@ export class UIScene extends Phaser.Scene {
       .setDepth(10002)
       .setInteractive({ useHandCursor: true });
 
-    this.backBtn.on(Phaser.Input.Events.POINTER_DOWN, () => {
-      this.leaveToMenu();
-    });
+    this.backBtn.on(Phaser.Input.Events.POINTER_DOWN, () => this.leaveToMenu());
 
     this.versionText = this.add
       .text(0, 0, String(import.meta.env.GAME_VERSION ?? ''), {
@@ -97,19 +97,64 @@ export class UIScene extends Phaser.Scene {
       .setAlpha(0.8);
   }
 
+  private createMobileControls(): void {
+    if (!this.showMobileControls) return;
+
+    this.questbookBtn = new TouchButton(this, 0, 0, {
+      label: 'Quests',
+      width: 100,
+      height: TOUCH_TARGET_MIN,
+      onPress: () => this.onOpenQuestbook(),
+    });
+
+    this.interactBtn = new TouchButton(this, 0, 0, {
+      label: 'Talk',
+      width: 100,
+      height: TOUCH_TARGET_MIN,
+      onPress: () => this.emitInteractToWorld(),
+    });
+  }
+
+  private emitInteractToWorld(): void {
+    const world = this.scene.get(this.worldSceneKey);
+    if (world) {
+      world.events.emit(InputEvents.INTERACT);
+    }
+  }
+
   private relayout = (): void => {
     const { width, height } = this.scale.gameSize;
-    const margin = UI_CONFIG.MARGIN;
+    const anchors = getUIAnchors(width, height);
 
     if (this.backBtn) {
       this.backBtn.setPosition(
-        Math.round(width - margin - this.backBtn.width),
-        Math.round(margin / 2),
+        Math.round(anchors.topRight.x - this.backBtn.width),
+        Math.round(anchors.topRight.y / 2),
       );
     }
 
     if (this.versionText) {
-      this.versionText.setPosition(Math.round(8), Math.round(height - 20));
+      this.versionText.setPosition(
+        Math.round(UI_CONFIG.MARGIN / 2),
+        Math.round(height - 18),
+      );
+    }
+
+    // Action buttons bottom-right with spacing (Milestone 5.5)
+    const gap = 12;
+    if (this.interactBtn) {
+      this.interactBtn.setPosition(
+        Math.round(anchors.bottomRight.x - 50),
+        Math.round(anchors.bottomRight.y - TOUCH_TARGET_MIN),
+      );
+      this.interactBtn.setVisible(this.showMobileControls);
+    }
+    if (this.questbookBtn) {
+      this.questbookBtn.setPosition(
+        Math.round(anchors.bottomRight.x - 50),
+        Math.round(anchors.bottomRight.y - TOUCH_TARGET_MIN * 2 - gap),
+      );
+      this.questbookBtn.setVisible(this.showMobileControls);
     }
 
     this.questHUD?.resize();
@@ -146,5 +191,7 @@ export class UIScene extends Phaser.Scene {
     this.questHUD = undefined;
     this.backBtn?.destroy();
     this.versionText?.destroy();
+    this.interactBtn?.destroy();
+    this.questbookBtn?.destroy();
   }
 }
