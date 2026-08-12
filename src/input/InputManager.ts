@@ -3,18 +3,18 @@ import { PlayerInputController } from './PlayerInputController';
 import { PlayerMovementController } from './PlayerMovementController';
 import { DesktopKeyboardController } from './DesktopKeyboardController';
 import { PointerController, InteractiveTarget, PointerControllerOptions } from './PointerController';
+import { DestinationMarker } from './DestinationMarker';
+import { VirtualJoystick } from './VirtualJoystick';
 import { DeviceDetector } from './DeviceDetector';
 
 export type InputManagerConfig = {
   player: Phaser.Physics.Arcade.Sprite;
   speed?: number;
   pointer?: PointerControllerOptions;
+  /** Enable virtual joystick (default: false). */
+  enableJoystick?: boolean;
 };
 
-/**
- * Single entry point for scene input wiring.
- * Keyboard, mouse, and touch all feed PlayerInputController.
- */
 export class InputManager {
   readonly inputController: PlayerInputController;
   readonly movement: PlayerMovementController;
@@ -26,6 +26,8 @@ export class InputManager {
 
   private readonly keyboard: DesktopKeyboardController;
   private readonly pointer: PointerController;
+  private readonly destinationMarker: DestinationMarker;
+  private readonly joystick?: VirtualJoystick;
 
   constructor(scene: Phaser.Scene, config: InputManagerConfig) {
     this.inputController = new PlayerInputController();
@@ -41,15 +43,28 @@ export class InputManager {
       hybrid: DeviceDetector.isHybrid(scene.game),
     };
 
+    this.destinationMarker = new DestinationMarker(scene);
+    this.movement.setDestinationMarker(this.destinationMarker);
+
     this.keyboard = new DesktopKeyboardController(scene, this.inputController);
-    this.pointer = new PointerController(scene, this.inputController, config.pointer ?? {});
+
+    const pointerOpts: PointerControllerOptions = {
+      ...(config.pointer ?? {}),
+      destinationMarker: this.destinationMarker,
+    };
+    this.pointer = new PointerController(scene, this.inputController, pointerOpts);
+
+    const wantJoystick = config.enableJoystick === true;
+    if (wantJoystick) {
+      this.joystick = new VirtualJoystick(scene, this.inputController);
+      this.joystick.setEnabled(true);
+    }
 
     if (import.meta.env.DEV) {
-      console.log('[InputManager] device:', this.device);
+      console.log('[InputManager] device:', this.device, 'joystick:', wantJoystick);
     }
   }
 
-  /** Refresh continuous keyboard vector then apply movement. */
   update(): { vx: number; vy: number; isMoving: boolean } {
     this.keyboard.update();
     return this.movement.update();
@@ -59,7 +74,10 @@ export class InputManager {
     this.pointer.setEnabled(enabled);
   }
 
-  /** Helper for scenes that expose NPC lists as InteractiveTarget[]. */
+  setJoystickEnabled(enabled: boolean): void {
+    this.joystick?.setEnabled(enabled);
+  }
+
   static targetsFromSprites(
     sprites: Array<{ dialogueId?: string; x: number; y: number }>,
     idKey: 'dialogueId' = 'dialogueId',
@@ -76,6 +94,8 @@ export class InputManager {
   shutdown(): void {
     this.keyboard.shutdown();
     this.pointer.shutdown();
+    this.joystick?.shutdown();
+    this.destinationMarker.destroy();
     this.inputController.cancelMovement();
   }
 }
