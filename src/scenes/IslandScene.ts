@@ -81,7 +81,6 @@ export class IslandScene extends Phaser.Scene {
       });
     }
 
-    // Intro quest only — item quest starts after explorer completes (or via NPC)
     this.questManager.startQuest('island_explorer');
 
     this.updateQuestMarkers();
@@ -107,7 +106,6 @@ export class IslandScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
   }
 
-  /** Milestone 9.2 — spawn items when an item-quest becomes active. */
   private onQuestStarted(questId: string): void {
     const def = this.questManager?.getQuestDefinition(questId);
     if (!def?.itemKey || !this.spawnManager) return;
@@ -129,7 +127,6 @@ export class IslandScene extends Phaser.Scene {
   }
 
   private onQuestCompleted(questId: string): void {
-    // Chain: after meeting the locals, gather supplies
     if (questId === 'island_explorer') {
       this.questManager?.startQuest('find_supplies');
     }
@@ -162,14 +159,24 @@ export class IslandScene extends Phaser.Scene {
   }
 
   private setupInput(): void {
+    let enableJoystick = false;
+    try {
+      const q = new URLSearchParams(window.location.search).get('joystick');
+      enableJoystick = q === '1' || q === 'true';
+    } catch {
+      enableJoystick = false;
+    }
+
     this.inputManager = new InputManager(this, {
       player: this.player,
       speed: 80,
+      enableJoystick,
       pointer: {
         isPointerOnUI: (pointer) => this.isPointerOnUI(pointer),
         isWalkable: (x, y) => this.isWalkable(x, y),
         findTargets: () => this.getInteractiveTargets(),
         interactPickRadius: 40,
+        isWorldInputBlocked: () => this.interactionManager?.isDialogOpen() === true,
       },
     });
 
