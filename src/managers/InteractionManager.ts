@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { NPC } from '../objects/NPC';
 import { DialogBox } from '../objects/DialogBox';
+import { InputEvents } from '../input/InputEvents';
 
 export class InteractionManager {
   private scene: Phaser.Scene;
@@ -10,7 +11,6 @@ export class InteractionManager {
   private currentDialogSequence: string[] = [];
   private currentDialogIndex: number = 0;
   private dialogueData: Record<string, { sequence: string[] }>;
-  private eKey?: Phaser.Input.Keyboard.Key;
   private spaceKey?: Phaser.Input.Keyboard.Key;
   private interactionHint?: Phaser.GameObjects.Text;
   private npcs: NPC[];
@@ -30,12 +30,12 @@ export class InteractionManager {
   }
 
   private setupInput(): void {
+    // E comes from DesktopKeyboardController → input:interact
+    this.scene.events.on(InputEvents.INTERACT, this.handleInteractionKey, this);
+
     const keyboard = this.scene.input.keyboard;
     if (keyboard) {
-      this.eKey = keyboard.addKey('E');
       this.spaceKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
-      this.eKey.on(Phaser.Input.Keyboard.Events.DOWN, this.handleInteractionKey, this);
       this.spaceKey.on(Phaser.Input.Keyboard.Events.DOWN, this.handleContinueKey, this);
     }
   }
@@ -56,21 +56,17 @@ export class InteractionManager {
 
   private handleInteractionKey(): void {
     if (this.currentDialog) {
-      // If dialog is open, skip typewriter
       if (!this.currentDialog.isTypewriterComplete()) {
         this.currentDialog.skipTypewriter();
       } else {
-        // Move to next dialog in sequence
         this.showNextDialog();
       }
     } else if (this.currentNearbyNPC) {
-      // Start dialog with nearby NPC
       this.startDialogWithNPC(this.currentNearbyNPC);
     }
   }
 
   private handleContinueKey(): void {
-    // Same as E key for convenience
     this.handleInteractionKey();
   }
 
@@ -90,7 +86,6 @@ export class InteractionManager {
 
   private showNextDialog(): void {
     if (this.currentDialogIndex >= this.currentDialogSequence.length) {
-      // Emit event when all dialogues are complete
       if (this.currentNearbyNPC) {
         this.scene.events.emit('dialogueSequenceCompleted', {
           dialogueId: this.currentNearbyNPC.dialogueId,
@@ -120,7 +115,6 @@ export class InteractionManager {
   }
 
   update(playerPos: { x: number; y: number }): void {
-    // Check proximity to NPCs
     let nearbyNPC: NPC | undefined;
     let closestDistance = Infinity;
 
@@ -134,7 +128,6 @@ export class InteractionManager {
 
     this.currentNearbyNPC = nearbyNPC;
 
-    // Update interaction hint
     if (this.interactionHint) {
       if (nearbyNPC && !this.currentDialog) {
         this.interactionHint.setPosition(
@@ -147,7 +140,6 @@ export class InteractionManager {
       }
     }
 
-    // Update dialog position if visible
     if (this.currentDialog && this.currentNearbyNPC) {
       this.currentDialog.positionAtNPC(this.currentNearbyNPC, this.scene.cameras.main);
     }
@@ -155,9 +147,7 @@ export class InteractionManager {
 
   shutdown(): void {
     this.dismissDialog();
-    if (this.eKey) {
-      this.eKey.off(Phaser.Input.Keyboard.Events.DOWN, this.handleInteractionKey, this);
-    }
+    this.scene.events.off(InputEvents.INTERACT, this.handleInteractionKey, this);
     if (this.spaceKey) {
       this.spaceKey.off(Phaser.Input.Keyboard.Events.DOWN, this.handleContinueKey, this);
     }
