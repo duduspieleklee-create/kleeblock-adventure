@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { NPC } from '../objects/NPC';
 import { SunnysidePlayer } from '../objects/SunnysidePlayer';
+import { buildSceneryColliders } from '../objects/SceneryCollider';
 import { InteractionManager } from '../managers/InteractionManager';
 import { QuestManager, Quest } from '../managers/QuestManager';
 import { InputManager } from '../input/InputManager';
@@ -11,10 +12,21 @@ import {
   getPlayerSpawn,
   MAP_DEPTH,
 } from '../maps/MapLoader';
+import { isFootprintWalkable } from '../maps/Walkability';
+
+/** Default narrow trunks for current 20×20 island (until Scenery layer is authored). */
+const DEFAULT_SCENERY = [
+  // Decorative plant cluster (NW of island interior)
+  { x: 120, y: 100, width: 12, height: 10, name: 'trunk_nw' },
+  { x: 248, y: 100, width: 12, height: 10, name: 'trunk_ne' },
+  { x: 100, y: 200, width: 12, height: 10, name: 'trunk_sw' },
+  { x: 240, y: 210, width: 14, height: 10, name: 'rock_se' },
+];
 
 export class IslandScene extends Phaser.Scene {
   private player!: SunnysidePlayer;
   private npcGroup!: Phaser.Physics.Arcade.StaticGroup;
+  private sceneryGroup?: Phaser.Physics.Arcade.StaticGroup;
   private map!: Phaser.Tilemaps.Tilemap;
 
   private collisionLayer!: Phaser.Tilemaps.TilemapLayer;
@@ -47,6 +59,7 @@ export class IslandScene extends Phaser.Scene {
     this.setupPhysics(loaded.map);
     this.setupPlayer();
     this.setupNPCs();
+    this.setupScenery();
     this.setupCamera(loaded.map);
     this.setupDebug();
     this.setupInput();
@@ -117,25 +130,10 @@ export class IslandScene extends Phaser.Scene {
     });
   }
 
-  /** Walkability must match Arcade collision data (Milestone 7.4 prep). */
+  /** Footprint walkability — matches tile collision used by Arcade (Milestone 7.4). */
   private isWalkable(worldX: number, worldY: number): boolean {
     if (!this.collisionLayer || !this.map) return false;
-
-    if (
-      worldX < 0 ||
-      worldY < 0 ||
-      worldX >= this.map.widthInPixels ||
-      worldY >= this.map.heightInPixels
-    ) {
-      return false;
-    }
-
-    const tile = this.collisionLayer.getTileAtWorldXY(worldX, worldY, true);
-    if (!tile || tile.index === -1) {
-      return true;
-    }
-
-    return !tile.collides;
+    return isFootprintWalkable(this.map, this.collisionLayer, worldX, worldY);
   }
 
   private onInputInteract(): void {}
@@ -172,6 +170,7 @@ export class IslandScene extends Phaser.Scene {
 
     this.player = new SunnysidePlayer(this, x, y);
     this.player.setDepth(MAP_DEPTH.ENTITIES);
+    // Milestone 7.1 — player vs collision tiles
     this.physics.add.collider(this.player, this.collisionLayer);
   }
 
@@ -205,7 +204,16 @@ export class IslandScene extends Phaser.Scene {
       }
     }
 
+    // Milestone 7.2 — NPCs vs tiles and vs player
     this.physics.add.collider(this.npcGroup, this.collisionLayer);
+    this.physics.add.collider(this.player, this.npcGroup);
+  }
+
+  /** Milestone 7.3 — narrow scenery bodies separate from visual tiles. */
+  private setupScenery(): void {
+    this.sceneryGroup = buildSceneryColliders(this, this.map, DEFAULT_SCENERY);
+    this.physics.add.collider(this.player, this.sceneryGroup);
+    this.physics.add.collider(this.npcGroup, this.sceneryGroup);
   }
 
   private setupCamera(map: Phaser.Tilemaps.Tilemap): void {
@@ -227,10 +235,18 @@ export class IslandScene extends Phaser.Scene {
     });
     this.collisionLayer.setVisible(true).setAlpha(0.35);
 
+    // Show scenery rectangles in debug
+    this.sceneryGroup?.getChildren().forEach((child) => {
+      const r = child as Phaser.GameObjects.Rectangle;
+      r.setVisible(true);
+      r.setFillStyle(0x00aaff, 0.35);
+      r.setStrokeStyle(1, 0x00ffff, 0.9);
+    });
+
     this.physics.world.createDebugGraphic();
     this.physics.world.drawDebug = true;
 
-    console.log('[IslandScene] Physics + collision layer debug enabled (?debug=1)');
+    console.log('[IslandScene] Physics + collision + scenery debug (?debug=1)');
   }
 
   private setupQuestTriggers(): void {
