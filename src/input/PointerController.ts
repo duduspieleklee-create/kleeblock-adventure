@@ -1,30 +1,31 @@
 import Phaser from 'phaser';
 import { PlayerInputController } from './PlayerInputController';
 import { InputEvents, InteractTargetPayload } from './InputEvents';
+import { DestinationMarker } from './DestinationMarker';
 
 export type InteractiveTarget = {
   id: string;
   x: number;
   y: number;
-  /** World-space hit radius for pointer prioritization. */
   radius: number;
 };
 
 export type PointerControllerOptions = {
-  /** Return true if the pointer is over screen-space UI (blocks world input). */
   isPointerOnUI?: (pointer: Phaser.Input.Pointer) => boolean;
-  /** Return true if the world point is walkable. */
   isWalkable?: (worldX: number, worldY: number) => boolean;
-  /** Interactive world targets (NPCs, items, etc.). */
   findTargets?: () => InteractiveTarget[];
-  /** Max distance from pointer to count as targeting an interactive. */
   interactPickRadius?: number;
+  /** Block world movement while dialogue/modal is open. */
+  isWorldInputBlocked?: () => boolean;
+  /** Show/hide destination marker. */
+  destinationMarker?: DestinationMarker;
+  /** Stop this far from interact targets (move-then-interact). */
+  interactStopDistance?: number;
 };
 
 /**
  * Shared mouse + touch path:
  * pointerdown → UI filter → interact target → walkable destination.
- * Uses camera.getWorldPoint so Scale.FIT is handled correctly.
  */
 export class PointerController {
   private readonly scene: Phaser.Scene;
@@ -32,7 +33,9 @@ export class PointerController {
   private readonly eventTarget: Phaser.Events.EventEmitter;
   private readonly options: PointerControllerOptions;
   private readonly interactPickRadius: number;
+  private readonly interactStopDistance: number;
   private enabled = true;
+  private downPos: { x: number; y: number } | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -45,8 +48,10 @@ export class PointerController {
     this.eventTarget = eventTarget;
     this.options = options;
     this.interactPickRadius = options.interactPickRadius ?? 40;
+    this.interactStopDistance = options.interactStopDistance ?? 28;
 
     this.scene.input.on('pointerdown', this.onPointerDown, this);
+    this.scene.input.on('pointerup', this.onPointerUp, this);
   }
 
   setEnabled(value: boolean): void {
@@ -55,6 +60,22 @@ export class PointerController {
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (!this.enabled) return;
+    this.downPos = { x: pointer.x, y: pointer.y };
+  }
+
+  private onPointerUp(pointer: Phaser.Input.Pointer): void {
+    if (!this.enabled) return;
+
+    // Ignore drags (joystick / accidental swipes)
+    if (this.downPos) {
+      const drag = Math.hypot(pointer.x - this.downPos.x, pointer.y - this.downPos.y);
+      this.downPos = null;
+      if (drag > 18) return;
+    }
+
+    if (this.options.isWorldInputBlocked?.()) {
+      return;
+    }
 
     if (this.options.isPointerOnUI?.(pointer)) {
       return;
@@ -71,27 +92,29 @@ export class PointerController {
       };
       this.eventTarget.emit(InputEvents.INTERACT_TARGET, payload);
 
-      // Move toward target if far; InteractionManager still handles E/proximity.
-      const dist = Phaser.Math.Distance.Between(
-        // approximate: use camera follow target via world; scene will refine later
-        worldPoint.x,
-        worldPoint.y,
-        target.x,
-        target.y,
-      );
-      // Always set a destination near the target so the player can walk there.
-      if (this.options.isWalkable?.(target.x, target.y) !== false) {
+      // Approach point short of the NPC so we don't stand on top of them
+      const angle = Phaser.Math.Angle.Between(worldPoint.x, worldPoint.y, target.x, target.y);
+      // Use player-less approach: stop short along vector from click toward target
+      const stopX = target.x - Math.cos(angle) * this.interactStopDistance;
+      const stopY = target.y - Math.sin(angle) * this.interactStopDistance;
+
+      if (this.options.isWalkable?.(stopX, stopY) !== false) {
+        this.inputController.moveToPoint(stopX, stopY);
+        this.options.destinationMarker?.show(stopX, stopY);
+      } else if (this.options.isWalkable?.(target.x, target.y) !== false) {
         this.inputController.moveToPoint(target.x, target.y);
+        this.options.destinationMarker?.show(target.x, target.y);
       }
-      void dist;
       return;
     }
 
     if (this.options.isWalkable && !this.options.isWalkable(worldPoint.x, worldPoint.y)) {
+      this.options.destinationMarker?.hide();
       return;
     }
 
     this.inputController.moveToPoint(worldPoint.x, worldPoint.y);
+    this.options.destinationMarker?.show(worldPoint.x, worldPoint.y);
   }
 
   private findNearestTarget(worldX: number, worldY: number): InteractiveTarget | null {
@@ -113,5 +136,6 @@ export class PointerController {
 
   shutdown(): void {
     this.scene.input.off('pointerdown', this.onPointerDown, this);
+    this.scene.input.off('pointerup', this.onPointerUp, this);
   }
 }
