@@ -75,13 +75,18 @@ export class BootScene extends Phaser.Scene {
     const w = this.scale.displaySize.width;
     const h = this.scale.displaySize.height;
 
+    console.log('[Boot] checkLayout:', w, '×', h, 'min=', Math.min(w, h), 'tooSmall=', Math.min(w, h) < MIN_VIEWPORT);
+
     if (!Number.isFinite(w) || !Number.isFinite(h) || w === 0 || h === 0) {
+      console.log('[Boot] Invalid dimensions, aborting');
       return false;
     }
 
     const tooSmall = Math.min(w, h) < MIN_VIEWPORT;
     const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
     const landscape = isMobile && w > h;
+
+    console.log('[Boot] tooSmall=', tooSmall, 'isMobile=', isMobile, 'landscape=', landscape);
 
     if (tooSmall || landscape) {
       this.showGateOverlay(tooSmall, landscape);
