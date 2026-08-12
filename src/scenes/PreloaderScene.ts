@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
+import { UI_CONFIG, TEXT_STYLES } from '../ui/UIConstants';
+import { log } from '../utils/logger';
 
 export class PreloaderScene extends Phaser.Scene {
   private errorText?: Phaser.GameObjects.Text;
+  private statusText?: Phaser.GameObjects.Text;
   private failedAssets: string[] = [];
 
   constructor() {
@@ -9,95 +12,93 @@ export class PreloaderScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const { width, height } = this.cameras.main;
+    const { width, height } = this.scale.gameSize;
+    const cx = Math.round(width / 2);
+    const cy = Math.round(height / 2);
 
-    // Loading bar background
+    const title = this.add
+      .text(cx, cy - 80, 'KleeBlock Adventure', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: '22px',
+        color: '#f5e6c8',
+      })
+      .setOrigin(0.5);
+
     const bg = this.add.graphics();
-    bg.fillStyle(0x222222, 0.8);
-    bg.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
+    bg.fillStyle(0x2a2118, 0.9);
+    bg.fillRoundedRect(cx - 160, cy - 20, 320, 28, 6);
+    bg.lineStyle(2, 0x8b6914, 1);
+    bg.strokeRoundedRect(cx - 160, cy - 20, 320, 28, 6);
 
-    // Loading bar fill
     const bar = this.add.graphics();
     this.load.on('progress', (value: number) => {
       bar.clear();
-      bar.fillStyle(0x00ff88, 1);
-      bar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
+      bar.fillStyle(0x00c878, 1);
+      bar.fillRoundedRect(cx - 156, cy - 16, Math.max(4, 312 * value), 20, 4);
+      this.statusText?.setText(`Loading… ${Math.round(value * 100)}%`);
     });
 
-    // Enhanced error tracking with detailed logging
+    this.statusText = this.add
+      .text(cx, cy + 28, 'Loading… 0%', {
+        ...TEXT_STYLES.body,
+        fontSize: '14px',
+        color: '#aaaaaa',
+      })
+      .setOrigin(0.5);
+
+    this.errorText = this.add
+      .text(cx, cy + 56, '', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: '11px',
+        color: '#ff6b6b',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setVisible(false);
+
     this.load.on('error', (file: unknown, error: unknown) => {
       const fileObj = file as { key?: string };
       const errorObj = error as { message?: string };
       const assetKey = fileObj?.key || 'unknown';
       const errorMsg = errorObj?.message || String(error);
       this.failedAssets.push(assetKey);
-      console.error(`[Preloader] Asset load failed: ${assetKey}`, errorMsg);
-
-      // Update error display
-      if (this.errorText) {
-        this.errorText.setText(`⚠ Failed: ${assetKey}\nContinuing...`);
-      }
+      log.error(`[Preloader] Asset load failed: ${assetKey}`, errorMsg);
+      this.errorText?.setVisible(true);
+      this.errorText?.setText(`Failed: ${assetKey}`);
     });
 
-    // Timeout with graceful fallback
     this.time.addEvent({
-      delay: 10_000,
+      delay: 12_000,
       callback: () => {
         if (this.scene.isActive('PreloaderScene')) {
-          if (this.failedAssets.length > 0) {
-            console.warn('[Preloader] Timed out with failed assets:', this.failedAssets);
-          } else {
-            console.warn('[Preloader] Timed out — forcing menu');
-          }
+          log.warn('[Preloader] Timed out — forcing menu');
           this.scene.start('MainMenuScene');
         }
       },
     });
 
-    // Loading text
-    this.add
-      .text(width / 2, height / 2 + 40, 'Loading...', {
-        fontSize: '16px',
-        color: '#aaaaaa',
-      })
-      .setOrigin(0.5);
-
-    // Error display (hidden by default)
-    this.errorText = this.add
-      .text(width / 2, height / 2 + 70, '', {
-        fontSize: '10px',
-        color: '#ff6b6b',
-        align: 'center',
-      })
-      .setOrigin(0.5);
-    this.errorText.setVisible(false);
-
-    // --- Load Asset Pack ---
     try {
       this.load.pack('game_assets', 'assets/pack.json');
     } catch (e) {
-      console.error('[Preloader] Failed to load asset pack:', e);
+      log.error('[Preloader] Failed to load asset pack:', e);
     }
+
+    void title;
   }
 
   create(): void {
-    // Log asset loading summary
     if (this.failedAssets.length > 0) {
-      console.warn('[Preloader] Loading completed with failures:', this.failedAssets);
+      log.warn('[Preloader] Loading completed with failures:', this.failedAssets);
       this.errorText?.setVisible(true);
       this.errorText?.setText(
-        `⚠ ${this.failedAssets.length} asset(s) failed to load.\nGame may have visual issues.`,
+        `${this.failedAssets.length} asset(s) failed.\nGame may have visual issues.`,
       );
-
-      // Delay transition to allow user to see the warning
       this.time.addEvent({
         delay: 2000,
-        callback: () => {
-          this.scene.start('MainMenuScene');
-        },
+        callback: () => this.scene.start('MainMenuScene'),
       });
     } else {
-      console.log('[Preloader] All assets loaded successfully');
+      log.debug('[Preloader] All assets loaded successfully');
       this.scene.start('MainMenuScene');
     }
   }
