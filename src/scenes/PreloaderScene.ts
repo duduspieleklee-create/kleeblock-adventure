@@ -109,6 +109,24 @@ export class PreloaderScene extends Phaser.Scene {
       frameHeight: 64,
     });
 
+    // NPC sprites (Kenney Roguelike Characters - CC0)
+    // 16×16 tiles with 1px margin, arranged in a grid
+    this.load.spritesheet(AssetKeys.NPCs.WELCOME, 'assets/npcs/roguelikeChar_transparent.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+      spacing: 1,
+      margin: 1,
+    });
+
+    // Item sprites (Kenney Roguelike RPG Pack - CC0)
+    // 16×16 tiles with 1px margin, arranged in a grid
+    this.load.spritesheet(AssetKeys.Items.CRATE, 'assets/items/roguelikeSheet_transparent.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+      spacing: 1,
+      margin: 1,
+    });
+
     void title;
   }
 

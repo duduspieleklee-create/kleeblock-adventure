@@ -33,6 +33,16 @@ and "LPC Thatched-roof Cottage" by bluecarrot16 at
 https://opengameart.org/content/lpc-thatched-roof-cottage.
 ```
 
+## NPC & Item Sprites (Kenney Roguelike - CC0)
+
+**Source:** https://kenney.nl/assets/roguelike-characters
+**Source:** https://kenney.nl/assets/roguelike-rpg-pack
+**License:** Creative Commons CC0 (Public Domain)
+
+### Files Used
+- `assets/npcs/roguelikeChar_transparent.png` - Character/NPC sprites (16×16 + 1px margin)
+- `assets/items/roguelikeSheet_transparent.png` - Item/collectible sprites (16×16 + 1px margin)
+
 ## Base Tileset (Sunnyside World)
 
 - `assets/tilesets/spr_tileset_sunnysideworld_16px.png`
