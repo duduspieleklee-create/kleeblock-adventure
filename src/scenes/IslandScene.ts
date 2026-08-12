@@ -4,6 +4,8 @@ import { SunnysidePlayer } from '../objects/SunnysidePlayer';
 import { InteractionManager } from '../managers/InteractionManager';
 import { QuestManager, Quest } from '../managers/QuestManager';
 import { QuestHUD } from '../ui/QuestHUD';
+import { InputManager } from '../input/InputManager';
+import { InputEvents, InteractTargetPayload } from '../input/InputEvents';
 
 /** Depth convention (bottom → top) */
 const DEPTH = {
@@ -20,17 +22,15 @@ export class IslandScene extends Phaser.Scene {
   private hud!: Phaser.GameObjects.Container;
   private map!: Phaser.Tilemaps.Tilemap;
 
-  // Visual layers – prefer TilemapGPULayer when available
   private seaLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
   private groundLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
   private decorLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
-
-  // Collision must stay on CPU for Arcade Physics
   private collisionLayer!: Phaser.Tilemaps.TilemapLayer;
 
   private interactionManager?: InteractionManager;
   private questManager?: QuestManager;
   private questHUD?: QuestHUD;
+  private inputManager?: InputManager;
 
   private dialogueData: Record<string, { sequence: string[] }> = {};
   private questsData: Record<string, Quest> = {};
@@ -40,7 +40,6 @@ export class IslandScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Cache data (loaded in PreloaderScene via pack.json)
     this.dialogueData = this.cache.json.get('dialogues') ?? {};
     this.questsData = this.cache.json.get('quests') ?? {};
 
@@ -58,8 +57,8 @@ export class IslandScene extends Phaser.Scene {
     this.setupCamera(map);
     this.setupHUD();
     this.setupDebug();
+    this.setupInput();
 
-    // Interaction + quest systems
     const npcs = this.npcGroup.getChildren() as NPC[];
     this.interactionManager = new InteractionManager(this, this.player, npcs, this.dialogueData);
 
@@ -71,19 +70,108 @@ export class IslandScene extends Phaser.Scene {
       this.questHUD?.resize();
     });
 
-    // Start the default quest
     this.questManager.startQuest('island_explorer');
-
-    // Initial spatial markers
     this.updateQuestMarkers();
 
-    // Listen for quest changes to refresh markers
     this.questManager.on('questStarted', () => this.updateQuestMarkers());
     this.questManager.on('objectiveCompleted', () => this.updateQuestMarkers());
     this.questManager.on('questCompleted', () => this.updateQuestMarkers());
 
-    // Y-sorting for characters
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Input (Block 2)
+  // ---------------------------------------------------------------------------
+
+  private setupInput(): void {
+    this.inputManager = new InputManager(this, {
+      player: this.player,
+      speed: 80,
+      pointer: {
+        isPointerOnUI: (pointer) => this.isPointerOnUI(pointer),
+        isWalkable: (x, y) => this.isWalkable(x, y),
+        findTargets: () => this.getInteractiveTargets(),
+        interactPickRadius: 40,
+      },
+    });
+
+    this.events.on(InputEvents.INTERACT, this.onInputInteract, this);
+    this.events.on(InputEvents.INTERACT_TARGET, this.onInputInteractTarget, this);
+    this.events.on(InputEvents.OPEN_QUESTBOOK, this.onOpenQuestbook, this);
+    this.events.on(InputEvents.CANCEL, this.onInputCancel, this);
+  }
+
+  private getInteractiveTargets() {
+    const npcs = this.npcGroup.getChildren() as NPC[];
+    return npcs.map((npc) => ({
+      id: npc.dialogueId,
+      x: npc.x,
+      y: npc.y,
+      radius: 36,
+    }));
+  }
+
+  /**
+   * Crude UI hit test: pointer over objects with scrollFactor 0 that are interactive.
+   * Refined when UIScene owns all screen UI (Milestone 5.6).
+   */
+  private isPointerOnUI(pointer: Phaser.Input.Pointer): boolean {
+    const hits = this.input.hitTestPointer(pointer);
+    return hits.some((obj) => {
+      const go = obj as Phaser.GameObjects.GameObject & { scrollFactorX?: number };
+      return typeof go.scrollFactorX === 'number' && go.scrollFactorX === 0;
+    });
+  }
+
+  /**
+   * Walkability from the collision layer (same data Arcade uses).
+   * Reject out-of-bounds and tiles marked collides=true.
+   */
+  private isWalkable(worldX: number, worldY: number): boolean {
+    if (!this.collisionLayer || !this.map) return false;
+
+    if (
+      worldX < 0 ||
+      worldY < 0 ||
+      worldX >= this.map.widthInPixels ||
+      worldY >= this.map.heightInPixels
+    ) {
+      return false;
+    }
+
+    const tile = this.collisionLayer.getTileAtWorldXY(worldX, worldY, true);
+    if (!tile || tile.index === -1) {
+      // Empty collision cell → walkable
+      return true;
+    }
+
+    // setCollisionByProperty({ collides: true }) marks collides on the tile
+    return !tile.collides;
+  }
+
+  private onInputInteract(): void {
+    // InteractionManager still owns E/dialog flow via its own E key.
+    // Also allow Space-style path later; for now INTERACT is additive.
+  }
+
+  private onInputInteractTarget(payload: InteractTargetPayload): void {
+    // Destination already set by PointerController; optional future: auto-talk when close
+    if (import.meta.env.DEV) {
+      console.log('[IslandScene] interactTarget', payload.targetId);
+    }
+  }
+
+  private onOpenQuestbook(): void {
+    // QuestHUD currently toggles on Q; emit path ready for UIScene (Milestone 4+)
+    // Simulate Q by finding a public toggle is not available — leave event for UIScene.
+    if (import.meta.env.DEV) {
+      console.log('[IslandScene] input:openQuestbook');
+    }
+  }
+
+  private onInputCancel(): void {
+    // Destination already cleared in keyboard controller
   }
 
   // ---------------------------------------------------------------------------
@@ -99,7 +187,6 @@ export class IslandScene extends Phaser.Scene {
       return null;
     }
 
-    // Use GPU layers for static visual content when WebGL is available
     const useGPU = this.game.renderer.type === Phaser.WEBGL;
 
     this.seaLayer = map.createLayer('sea', tileset, 0, 0, useGPU)!;
@@ -111,8 +198,6 @@ export class IslandScene extends Phaser.Scene {
     this.decorLayer = map.createLayer('ground_decoration', tileset, 0, 0, useGPU)!;
     this.decorLayer.setDepth(DEPTH.DECOR);
 
-    // Collision layer – MUST remain a regular TilemapLayer (physics reads CPU tile data)
-    // Uses Tiled custom property collides=true on solid tiles (tileset local id 0 / GID 1)
     this.collisionLayer = map.createLayer('collision', tileset, 0, 0, false)! as Phaser.Tilemaps.TilemapLayer;
     this.collisionLayer.setVisible(false).setDepth(-1);
     this.collisionLayer.setCollisionByProperty({ collides: true });
@@ -123,7 +208,6 @@ export class IslandScene extends Phaser.Scene {
   private setupPhysics(map: Phaser.Tilemaps.Tilemap): void {
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
-    // Visualize bodies + tile collision: open the game with ?debug=1
     if (this.isPhysicsDebugEnabled()) {
       this.physics.world.createDebugGraphic();
       this.physics.world.drawDebug = true;
@@ -139,10 +223,6 @@ export class IslandScene extends Phaser.Scene {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Player & NPCs (from Tiled objects layer)
-  // ---------------------------------------------------------------------------
-
   private getObjectProperty(obj: Phaser.Types.Tilemaps.TiledObject, key: string): string | undefined {
     const props = obj.properties as Array<{ name: string; value: unknown }> | undefined;
     if (!props) return undefined;
@@ -151,7 +231,6 @@ export class IslandScene extends Phaser.Scene {
   }
 
   private setupPlayer(): void {
-    // Prefer spawn point from Tiled objects layer
     let x = 160;
     let y = 180;
 
@@ -180,7 +259,6 @@ export class IslandScene extends Phaser.Scene {
       [];
 
     if (npcObjects.length === 0) {
-      // Fallback to hard-coded positions if objects layer is missing
       console.warn('[IslandScene] No NPCs found in objects layer – using fallback positions');
       const fallback = [
         { x: 160, y: 120, dialogueId: 'welcome_npc' },
@@ -206,22 +284,14 @@ export class IslandScene extends Phaser.Scene {
     this.physics.add.collider(this.npcGroup, this.collisionLayer);
   }
 
-  // ---------------------------------------------------------------------------
-  // Camera
-  // ---------------------------------------------------------------------------
-
   private setupCamera(map: Phaser.Tilemaps.Tilemap): void {
     const cam = this.cameras.main;
 
     cam.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     cam.startFollow(this.player, true, 0.1, 0.1);
     cam.setZoom(2);
-    cam.setRoundPixels(true); // crisp 16 px tiles + character sprites
+    cam.setRoundPixels(true);
   }
-
-  // ---------------------------------------------------------------------------
-  // HUD
-  // ---------------------------------------------------------------------------
 
   private setupHUD(): void {
     this.hud = this.add.container(0, 0).setScrollFactor(0).setDepth(DEPTH.HUD);
@@ -251,10 +321,6 @@ export class IslandScene extends Phaser.Scene {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Physics Debug (?debug=1)
-  // ---------------------------------------------------------------------------
-
   private setupDebug(): void {
     const params = new URLSearchParams(window.location.search);
     const debugEnabled =
@@ -262,7 +328,6 @@ export class IslandScene extends Phaser.Scene {
 
     if (!debugEnabled) return;
 
-    // Show colliding tiles
     const debugGraphics = this.add.graphics().setAlpha(0.6).setDepth(50);
     this.collisionLayer.renderDebug(debugGraphics, {
       tileColor: null,
@@ -270,16 +335,11 @@ export class IslandScene extends Phaser.Scene {
       faceColor: new Phaser.Display.Color(40, 39, 37, 255),
     });
 
-    // Enable Arcade Physics body outlines
     this.physics.world.createDebugGraphic();
     this.physics.world.drawDebug = true;
 
     console.log('[IslandScene] Physics debug enabled (?debug=1)');
   }
-
-  // ---------------------------------------------------------------------------
-  // Quests + Spatial Markers
-  // ---------------------------------------------------------------------------
 
   private setupQuestTriggers(): void {
     if (!this.questManager) return;
@@ -301,17 +361,12 @@ export class IslandScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Update spatial ! markers above NPCs based on active quest objectives.
-   * Shows a golden ! when an NPC is the target of an incomplete dialogue objective.
-   */
   private updateQuestMarkers(): void {
     if (!this.questManager || !this.npcGroup) return;
 
     const activeQuests = this.questManager.getActiveQuests();
     const targetDialogueIds = new Set<string>();
 
-    // Collect all dialogue targets from incomplete objectives
     for (const status of activeQuests) {
       const quest = this.questsData[status.questId];
       if (!quest) continue;
@@ -323,17 +378,12 @@ export class IslandScene extends Phaser.Scene {
       }
     }
 
-    // Apply markers to NPCs
     this.npcGroup.getChildren().forEach((child) => {
       const npc = child as NPC;
       const shouldShow = targetDialogueIds.has(npc.dialogueId);
       npc.setQuestMarker(shouldShow, '#ffcc00');
     });
   }
-
-  // ---------------------------------------------------------------------------
-  // Y-sorting
-  // ---------------------------------------------------------------------------
 
   private updateDepth = (): void => {
     this.player.setDepth(DEPTH.ENTITIES + this.player.y * 0.01);
@@ -344,12 +394,11 @@ export class IslandScene extends Phaser.Scene {
     });
   };
 
-  // ---------------------------------------------------------------------------
-  // Update / Shutdown
-  // ---------------------------------------------------------------------------
-
   update(): void {
-    this.player.update();
+    if (this.inputManager) {
+      const result = this.inputManager.update();
+      this.player.applyMovementResult(result);
+    }
 
     if (this.interactionManager) {
       this.interactionManager.update({ x: this.player.x, y: this.player.y });
@@ -357,10 +406,15 @@ export class IslandScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.inputManager?.shutdown();
     this.interactionManager?.shutdown();
     this.questHUD?.shutdown();
 
     this.events.off(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
     this.events.off('dialogueSequenceCompleted');
+    this.events.off(InputEvents.INTERACT, this.onInputInteract, this);
+    this.events.off(InputEvents.INTERACT_TARGET, this.onInputInteractTarget, this);
+    this.events.off(InputEvents.OPEN_QUESTBOOK, this.onOpenQuestbook, this);
+    this.events.off(InputEvents.CANCEL, this.onInputCancel, this);
   }
 }
