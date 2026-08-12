@@ -7,6 +7,8 @@ export interface Objective {
   type: 'dialogue' | 'location' | 'item' | 'custom';
   targetId: string;
   completed?: boolean;
+  /** For item objectives: how many to collect */
+  requiredCount?: number;
 }
 
 export interface QuestReward {
@@ -20,12 +22,17 @@ export interface Quest {
   description: string;
   objectives: Objective[];
   reward: QuestReward;
+  /** Optional spawn metadata for item quests */
+  itemKey?: string;
+  requiredCount?: number;
 }
 
 export interface QuestStatus {
   questId: string;
   status: 'NOT_STARTED' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
   objectives: Record<string, boolean>;
+  /** Item collection counts per objective id */
+  itemCounts: Record<string, number>;
   startedAt?: number;
   completedAt?: number;
 }
@@ -45,24 +52,38 @@ export class QuestManager {
   }
 
   private loadQuestStates(): void {
-    // Load quest states from GameState
-    const savedQuests = this.gameState.get('quests') as Record<string, QuestStatus> | undefined;
-    if (savedQuests) {
-      this.activeQuests = savedQuests;
+    const raw = this.gameState.get('quests');
+    if (!raw) return;
+
+    try {
+      const saved =
+        typeof raw === 'string'
+          ? (JSON.parse(raw) as Record<string, QuestStatus>)
+          : (raw as Record<string, QuestStatus>);
+      this.activeQuests = saved;
+      // Backfill itemCounts for older saves
+      for (const status of Object.values(this.activeQuests)) {
+        if (!status.itemCounts) status.itemCounts = {};
+      }
+    } catch {
+      console.warn('[QuestManager] Failed to parse saved quests');
     }
   }
 
-  /**
-   * Start a new quest
-   */
   startQuest(questId: string): boolean {
     if (!this.questsData[questId]) {
       console.warn(`[QuestManager] Quest not found: ${questId}`);
       return false;
     }
 
-    if (this.activeQuests[questId]) {
-      console.warn(`[QuestManager] Quest already started: ${questId}`);
+    if (this.activeQuests[questId]?.status === 'ACTIVE') {
+      console.warn(`[QuestManager] Quest already active: ${questId}`);
+      return false;
+    }
+
+    // Allow restart if previously completed only when explicitly cleared; block re-start if still active
+    if (this.activeQuests[questId]?.status === 'COMPLETED') {
+      console.warn(`[QuestManager] Quest already completed: ${questId}`);
       return false;
     }
 
@@ -71,12 +92,15 @@ export class QuestManager {
       questId,
       status: 'ACTIVE',
       objectives: {},
+      itemCounts: {},
       startedAt: Date.now(),
     };
 
-    // Initialize objectives
     quest.objectives.forEach((obj) => {
       questStatus.objectives[obj.id] = false;
+      if (obj.type === 'item') {
+        questStatus.itemCounts[obj.id] = 0;
+      }
     });
 
     this.activeQuests[questId] = questStatus;
@@ -89,8 +113,45 @@ export class QuestManager {
   }
 
   /**
-   * Complete an objective within a quest
+   * Handle item:collected — increments count for matching item objectives.
    */
+  onItemCollected(questId: string, itemId: string): boolean {
+    const questStatus = this.activeQuests[questId];
+    if (!questStatus || questStatus.status !== 'ACTIVE') {
+      return false;
+    }
+
+    const quest = this.questsData[questId];
+    if (!quest) return false;
+
+    let progressed = false;
+
+    for (const objective of quest.objectives) {
+      if (objective.type !== 'item') continue;
+      if (objective.targetId !== itemId) continue;
+      if (questStatus.objectives[objective.id]) continue;
+
+      const required = objective.requiredCount ?? quest.requiredCount ?? 1;
+      const current = (questStatus.itemCounts[objective.id] ?? 0) + 1;
+      questStatus.itemCounts[objective.id] = current;
+      progressed = true;
+
+      this.questEvents.emit('itemProgress', {
+        questId,
+        objectiveId: objective.id,
+        current,
+        required,
+      });
+
+      if (current >= required) {
+        this.completeObjective(questId, objective.id);
+      }
+    }
+
+    if (progressed) this.saveQuestStates();
+    return progressed;
+  }
+
   completeObjective(questId: string, objectiveId: string): boolean {
     const questStatus = this.activeQuests[questId];
     if (!questStatus) {
@@ -108,11 +169,14 @@ export class QuestManager {
       return false;
     }
 
+    if (questStatus.objectives[objectiveId]) {
+      return false;
+    }
+
     questStatus.objectives[objectiveId] = true;
     console.log(`[QuestManager] Objective completed: ${questId} -> ${objectiveId}`);
     this.questEvents.emit('objectiveCompleted', { questId, objectiveId });
 
-    // Check if all objectives are complete
     if (this.areAllObjectivesComplete(questId)) {
       this.completeQuest(questId);
     }
@@ -121,9 +185,6 @@ export class QuestManager {
     return true;
   }
 
-  /**
-   * Complete an entire quest
-   */
   completeQuest(questId: string): boolean {
     const questStatus = this.activeQuests[questId];
     if (!questStatus) {
@@ -135,21 +196,18 @@ export class QuestManager {
     questStatus.completedAt = Date.now();
 
     const quest = this.questsData[questId];
-    if (quest.reward.stateFlag) {
+    if (quest?.reward.stateFlag) {
       this.gameState.set(quest.reward.stateFlag, true);
     }
 
     console.log(`[QuestManager] Quest completed: ${questId}`);
-    console.log(`[QuestManager] Reward: ${quest.reward.message}`);
+    console.log(`[QuestManager] Reward: ${quest?.reward.message}`);
     this.questEvents.emit('questCompleted', { questId, quest });
 
     this.saveQuestStates();
     return true;
   }
 
-  /**
-   * Fail a quest
-   */
   failQuest(questId: string): boolean {
     const questStatus = this.activeQuests[questId];
     if (!questStatus) {
@@ -165,30 +223,22 @@ export class QuestManager {
     return true;
   }
 
-  /**
-   * Get a specific quest status
-   */
   getQuestStatus(questId: string): QuestStatus | undefined {
     return this.activeQuests[questId];
   }
 
-  /**
-   * Get all active quests
-   */
   getActiveQuests(): QuestStatus[] {
     return Object.values(this.activeQuests).filter((q) => q.status === 'ACTIVE');
   }
 
-  /**
-   * Get all completed quests
-   */
   getCompletedQuests(): QuestStatus[] {
     return Object.values(this.activeQuests).filter((q) => q.status === 'COMPLETED');
   }
 
-  /**
-   * Check if all objectives are complete
-   */
+  getQuestDefinition(questId: string): Quest | undefined {
+    return this.questsData[questId];
+  }
+
   private areAllObjectivesComplete(questId: string): boolean {
     const questStatus = this.activeQuests[questId];
     if (!questStatus) return false;
@@ -196,9 +246,6 @@ export class QuestManager {
     return Object.values(questStatus.objectives).every((completed) => completed === true);
   }
 
-  /**
-   * Get progress of a quest (0-1)
-   */
   getQuestProgress(questId: string): number {
     const questStatus = this.activeQuests[questId];
     if (!questStatus) return 0;
@@ -210,35 +257,28 @@ export class QuestManager {
     return completed / objectives.length;
   }
 
-  /**
-   * Listen to quest events
-   */
   on(
-    event: 'questStarted' | 'objectiveCompleted' | 'questCompleted' | 'questFailed',
+    event:
+      | 'questStarted'
+      | 'objectiveCompleted'
+      | 'questCompleted'
+      | 'questFailed'
+      | 'itemProgress',
     callback: (data: any) => void,
   ): void {
     this.questEvents.on(event, callback);
   }
 
-  /**
-   * Save quest states to GameState
-   */
   private saveQuestStates(): void {
     this.gameState.set('quests', JSON.stringify(this.activeQuests));
   }
 
-  /**
-   * Reset all quests (for debugging)
-   */
   resetAllQuests(): void {
     this.activeQuests = {};
     this.saveQuestStates();
     console.log('[QuestManager] All quests reset');
   }
 
-  /**
-   * Get debug info
-   */
   getDebugInfo(): Record<string, any> {
     return {
       activeQuests: this.getActiveQuests().length,
