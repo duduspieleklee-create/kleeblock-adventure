@@ -81,19 +81,16 @@ export class IslandScene extends Phaser.Scene {
       });
     }
 
-    // Dialogue intro quest
     this.questManager.startQuest('island_explorer');
 
-    // Item collect quest + spawn crates (Milestone 8 / 9.2 flow)
     if (this.questManager.startQuest('find_supplies')) {
       const def = this.questManager.getQuestDefinition('find_supplies');
       const itemKey = def?.itemKey ?? 'supply_crate';
       const count = def?.requiredCount ?? 3;
-      this.spawnManager.spawnForQuest(itemKey, itemKey, count, {
+      this.spawnManager.spawnForQuest('find_supplies', itemKey, count, {
         x: this.player.x,
         y: this.player.y,
-      });
-      // spawnForQuest signature is (questId, itemKey, count, playerPos)
+      }, { minPlayerDistance: 40 });
     }
 
     this.updateQuestMarkers();
