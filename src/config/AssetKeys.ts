@@ -23,6 +23,7 @@ export const AssetKeys = {
   // Tilemaps
   Tilemaps: {
     ISLAND: 'island',
+    ISLAND_EXPANDED: 'island_expanded',
   },
 
   // Data

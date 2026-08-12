@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { AssetKeys } from '../config/AssetKeys';
+import { AssetKeys, TilesetKey } from '../config/AssetKeys';
 
 /** Depth convention for island tile layers (world only). */
 export const MAP_DEPTH = {
@@ -36,20 +36,36 @@ const REQUIRED_TILE_LAYERS = ['sea', 'ground', 'collision'] as const;
 
 /**
  * Load and validate the static island tilemap.
+ * Supports single and multi-tileset maps.
  * Visual layers stay separate from collision (Milestone 6.2).
  */
 export function loadIslandMap(
   scene: Phaser.Scene,
   mapKey = AssetKeys.Tilemaps.ISLAND,
-  tilesetName = AssetKeys.Tilesets.SUNNYSIDE,
-  tilesetImageKey = AssetKeys.Tilesets.SUNNYSIDE,
+  tilesetName?: TilesetKey,
+  tilesetImageKey?: string,
 ): LoadedIslandMap | null {
   const map = scene.make.tilemap({ key: mapKey });
 
-  const tileset = map.addTilesetImage(tilesetName, tilesetImageKey);
-  if (!tileset) {
+  // Support multi-tileset maps — try each tileset in the map until one loads
+  const tilesets = tilesetName ? [tilesetName] : map.tilesets.map((t) => t.name);
+  const loadedTilesets: Phaser.Tilemaps.Tileset[] = [];
+
+  for (const tsName of tilesets) {
+    const tsImageKey = tilesetImageKey || tsName;
+    const tileset = map.addTilesetImage(tsName, tsImageKey);
+    if (!tileset) {
+      console.warn(
+        `[MapLoader] Tileset "${tsName}" failed to load (image key "${tsImageKey}")`,
+      );
+      continue;
+    }
+    loadedTilesets.push(tileset);
+  }
+
+  if (loadedTilesets.length === 0) {
     console.error(
-      `[MapLoader] Tileset "${tilesetName}" failed to load (image key "${tilesetImageKey}")`,
+      `[MapLoader] No tilesets loaded for map "${mapKey}"`,
     );
     return null;
   }
@@ -66,31 +82,31 @@ export function loadIslandMap(
   // and crashes with "Cannot read properties of undefined (reading '0')"
   const useGPU = false;
 
-  const sea = map.createLayer('sea', tileset, 0, 0, useGPU) ?? undefined;
+  const sea = map.createLayer('sea', loadedTilesets, 0, 0, useGPU) ?? undefined;
   sea?.setDepth(MAP_DEPTH.SEA);
 
-  const ground = map.createLayer('ground', tileset, 0, 0, useGPU) ?? undefined;
+  const ground = map.createLayer('ground', loadedTilesets, 0, 0, useGPU) ?? undefined;
   ground?.setDepth(MAP_DEPTH.GROUND);
 
   // Optional visual layers (plan names or current map names)
   // Only create if layer exists in map to avoid errors
   const paths =
     map.getLayer('paths')
-      ? map.createLayer('paths', tileset, 0, 0, useGPU) ?? undefined
+      ? map.createLayer('paths', loadedTilesets, 0, 0, useGPU) ?? undefined
       : undefined;
   paths?.setDepth(MAP_DEPTH.PATHS);
 
   const decor =
     map.getLayer('ground_decoration')
-      ? map.createLayer('ground_decoration', tileset, 0, 0, useGPU) ?? undefined
+      ? map.createLayer('ground_decoration', loadedTilesets, 0, 0, useGPU) ?? undefined
       : map.getLayer('Objects')
-        ? map.createLayer('Objects', tileset, 0, 0, useGPU) ?? undefined
+        ? map.createLayer('Objects', loadedTilesets, 0, 0, useGPU) ?? undefined
         : undefined;
   decor?.setDepth(MAP_DEPTH.DECOR);
 
   const collisionLayer = map.createLayer(
     'collision',
-    tileset,
+    loadedTilesets,
     0,
     0,
     false,
@@ -117,7 +133,7 @@ export function loadIslandMap(
 
   return {
     map,
-    tileset,
+    tileset: loadedTilesets[0],
     layers: {
       sea,
       ground,

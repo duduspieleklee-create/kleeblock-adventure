@@ -78,9 +78,12 @@ export class PreloaderScene extends Phaser.Scene {
       },
     });
 
-    // ── Explicit asset loading (better error handling than pack.json) ──
-    // Tilesets
+    // ── Explicit asset loading (phaser4-gamedev style - better error handling) ──
+
+    // Sunnyside world tileset
     this.load.image(AssetKeys.Tilesets.SUNNYSIDE, 'assets/tilesets/spr_tileset_sunnysideworld_16px.png');
+
+    // Hilau 16×16 RPG Tileset (CC-BY)
     this.load.image(AssetKeys.Tilesets.RPG_TERRAIN, 'assets/tilesets/buildings/1_terrain.png');
     this.load.image(AssetKeys.Tilesets.RPG_BUILDINGS, 'assets/tilesets/buildings/4_buildings.png');
     this.load.image(AssetKeys.Tilesets.RPG_ROOFS, 'assets/tilesets/buildings/11_roofs.png');
@@ -89,7 +92,8 @@ export class PreloaderScene extends Phaser.Scene {
     this.load.image(AssetKeys.Tilesets.RPG_BEACH, 'assets/tilesets/buildings/9_beach.png');
 
     // Tilemaps
-    this.load.tilemapTiledJSON(AssetKeys.Tilemaps.ISLAND, 'assets/tilemaps/island_expanded.json');
+    this.load.tilemapTiledJSON(AssetKeys.Tilemaps.ISLAND, 'assets/tilemaps/island.json');
+    this.load.tilemapTiledJSON(AssetKeys.Tilemaps.ISLAND_EXPANDED, 'assets/tilemaps/island_expanded.json');
 
     // Data
     this.load.json(AssetKeys.Data.DIALOGUES, 'assets/data/dialogues.json');
@@ -117,10 +121,28 @@ export class PreloaderScene extends Phaser.Scene {
       spacing: 1,
       margin: 1,
     });
+    this.load.spritesheet(AssetKeys.NPCs.SHOPKEEPER, 'assets/npcs/roguelikeChar_transparent.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+      spacing: 1,
+      margin: 1,
+    });
 
     // Item sprites (Kenney Roguelike RPG Pack - CC0)
     // 16×16 tiles with 1px margin, arranged in a grid
     this.load.spritesheet(AssetKeys.Items.CRATE, 'assets/items/roguelikeSheet_transparent.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+      spacing: 1,
+      margin: 1,
+    });
+    this.load.spritesheet(AssetKeys.Items.BARREL, 'assets/items/roguelikeSheet_transparent.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+      spacing: 1,
+      margin: 1,
+    });
+    this.load.spritesheet(AssetKeys.Items.SUPPLY, 'assets/items/roguelikeSheet_transparent.png', {
       frameWidth: 16,
       frameHeight: 16,
       spacing: 1,
