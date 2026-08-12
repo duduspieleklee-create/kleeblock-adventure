@@ -49,10 +49,3 @@ export const TEXT_STYLES = {
     color: '#00ff88',
   },
 } as const;
-
-/** Phaser text style objects derived from TEXT_STYLES (mutable copies). */
-export function phaserTextStyle(
-  key: keyof typeof TEXT_STYLES,
-): Phaser.Types.GameObjects.Text.TextStyle {
-  return { ...TEXT_STYLES[key] };
-}
