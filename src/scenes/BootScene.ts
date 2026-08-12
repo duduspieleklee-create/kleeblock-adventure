@@ -24,9 +24,12 @@ export class BootScene extends Phaser.Scene {
   private async bootSequence(): Promise<void> {
     await this.waitForFonts();
 
-    if (this.checkLayout()) {
-      this.scene.start('PreloaderScene');
-    }
+    // Give Phaser one more frame to settle display size after font load
+    this.time.delayedCall(50, () => {
+      if (this.checkLayout()) {
+        this.scene.start('PreloaderScene');
+      }
+    });
   }
 
   /** Milestone 3.2 — avoid layout jump from late font load. */
@@ -67,8 +70,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   private checkLayout(): boolean {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    // Use Phaser's display size (canvas element size) instead of window.innerWidth
+    // which includes dev tools space and causes false "too small" triggers
+    const w = this.scale.displaySize.width;
+    const h = this.scale.displaySize.height;
 
     if (!Number.isFinite(w) || !Number.isFinite(h) || w === 0 || h === 0) {
       return false;
@@ -117,8 +122,10 @@ export class BootScene extends Phaser.Scene {
       .setDepth(100000);
 
     this.scale.once('resize', () => {
-      // Recreate gate on orientation/size change
-      this.scene.restart();
+      // Debounce: wait for resize to settle before restarting
+      this.time.delayedCall(100, () => {
+        this.scene.restart();
+      });
     });
   }
 }
