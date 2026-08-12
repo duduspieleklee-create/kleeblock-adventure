@@ -1,15 +1,15 @@
 import Phaser from 'phaser';
 import { NPC } from '../objects/NPC';
-import { DialogBox } from '../objects/DialogBox';
+import { DialogBox } from '../ui/DialogBox';
 import { InputEvents } from '../input/InputEvents';
 
 export class InteractionManager {
   private scene: Phaser.Scene;
-  private interactionRadius: number = 80;
+  private interactionRadius = 80;
   private currentNearbyNPC?: NPC;
   private currentDialog?: DialogBox;
   private currentDialogSequence: string[] = [];
-  private currentDialogIndex: number = 0;
+  private currentDialogIndex = 0;
   private dialogueData: Record<string, { sequence: string[] }>;
   private spaceKey?: Phaser.Input.Keyboard.Key;
   private interactionHint?: Phaser.GameObjects.Text;
@@ -30,7 +30,6 @@ export class InteractionManager {
   }
 
   private setupInput(): void {
-    // E comes from DesktopKeyboardController → input:interact
     this.scene.events.on(InputEvents.INTERACT, this.handleInteractionKey, this);
 
     const keyboard = this.scene.input.keyboard;
@@ -43,10 +42,10 @@ export class InteractionManager {
   private createInteractionHint(): void {
     this.interactionHint = this.scene.add
       .text(0, 0, 'Press E to talk', {
-        fontSize: '10px',
+        fontSize: '12px',
         color: '#ffff88',
         backgroundColor: '#000000',
-        padding: { x: 4, y: 2 },
+        padding: { x: 6, y: 3 },
       })
       .setOrigin(0.5)
       .setAlpha(0)
@@ -96,10 +95,12 @@ export class InteractionManager {
     }
 
     const text = this.currentDialogSequence[this.currentDialogIndex];
-    this.currentDialog = new DialogBox(this.scene, text, 40);
 
-    if (this.currentNearbyNPC) {
-      this.currentDialog.positionAtNPC(this.currentNearbyNPC, this.scene.cameras.main);
+    if (this.currentDialog) {
+      this.currentDialog.setText(text);
+      this.currentDialog.show();
+    } else {
+      this.currentDialog = new DialogBox(this.scene, text, 40);
     }
 
     this.currentDialogIndex++;
@@ -130,19 +131,22 @@ export class InteractionManager {
 
     if (this.interactionHint) {
       if (nearbyNPC && !this.currentDialog) {
-        this.interactionHint.setPosition(
-          this.scene.cameras.main.width / 2,
-          this.scene.cameras.main.height - 50,
-        );
+        const { width, height } = this.scene.scale.gameSize;
+        this.interactionHint.setPosition(Math.round(width / 2), Math.round(height - 56));
         this.interactionHint.setAlpha(1);
       } else {
         this.interactionHint.setAlpha(0);
       }
     }
+  }
 
-    if (this.currentDialog && this.currentNearbyNPC) {
-      this.currentDialog.positionAtNPC(this.currentNearbyNPC, this.scene.cameras.main);
-    }
+  isDialogOpen(): boolean {
+    return !!this.currentDialog;
+  }
+
+  /** Trigger interact from mobile UI button. */
+  requestInteract(): void {
+    this.handleInteractionKey();
   }
 
   shutdown(): void {
