@@ -7,7 +7,7 @@ import { InteractionManager } from '../managers/InteractionManager';
 import { QuestManager, Quest } from '../managers/QuestManager';
 import { SpawnManager } from '../managers/SpawnManager';
 import { InputManager } from '../input/InputManager';
-import { InputEvents, InteractTargetPayload, ItemEvents } from '../input/InputEvents';
+import { InputEvents, InteractTargetPayload, ItemEvents, QuestEvents } from '../input/InputEvents';
 import {
   loadIslandMap,
   getNpcSpawns,
@@ -81,25 +81,58 @@ export class IslandScene extends Phaser.Scene {
       });
     }
 
+    // Intro quest only — item quest starts after explorer completes (or via NPC)
     this.questManager.startQuest('island_explorer');
-
-    if (this.questManager.startQuest('find_supplies')) {
-      const def = this.questManager.getQuestDefinition('find_supplies');
-      const itemKey = def?.itemKey ?? 'supply_crate';
-      const count = def?.requiredCount ?? 3;
-      this.spawnManager.spawnForQuest('find_supplies', itemKey, count, {
-        x: this.player.x,
-        y: this.player.y,
-      }, { minPlayerDistance: 40 });
-    }
 
     this.updateQuestMarkers();
 
-    this.questManager.on('questStarted', () => this.updateQuestMarkers());
+    this.questManager.on('questStarted', (data: { questId: string }) => {
+      this.updateQuestMarkers();
+      this.onQuestStarted(data.questId);
+    });
     this.questManager.on('objectiveCompleted', () => this.updateQuestMarkers());
-    this.questManager.on('questCompleted', () => this.updateQuestMarkers());
+    this.questManager.on('questCompleted', (data: { questId: string }) => {
+      this.updateQuestMarkers();
+      this.onQuestCompleted(data.questId);
+    });
+    this.questManager.on('itemProgress', (data: {
+      questId: string;
+      objectiveId: string;
+      current: number;
+      required: number;
+    }) => {
+      this.events.emit(QuestEvents.PROGRESS_CHANGED, data);
+    });
 
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
+  }
+
+  /** Milestone 9.2 — spawn items when an item-quest becomes active. */
+  private onQuestStarted(questId: string): void {
+    const def = this.questManager?.getQuestDefinition(questId);
+    if (!def?.itemKey || !this.spawnManager) return;
+
+    const count = def.requiredCount ?? 3;
+    this.spawnManager.spawnForQuest(
+      questId,
+      def.itemKey,
+      count,
+      { x: this.player.x, y: this.player.y },
+      { minPlayerDistance: 40 },
+    );
+
+    this.events.emit(QuestEvents.UPDATE, {
+      title: def.title,
+      description: def.description,
+      questId,
+    });
+  }
+
+  private onQuestCompleted(questId: string): void {
+    // Chain: after meeting the locals, gather supplies
+    if (questId === 'island_explorer') {
+      this.questManager?.startQuest('find_supplies');
+    }
   }
 
   private setupItemCollection(): void {
