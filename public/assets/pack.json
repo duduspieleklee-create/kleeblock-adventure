@@ -7,6 +7,36 @@
         "url": "assets/tilesets/spr_tileset_sunnysideworld_16px.png"
       },
       {
+        "type": "image",
+        "key": "rpg_terrain",
+        "url": "assets/tilesets/buildings/1_terrain.png"
+      },
+      {
+        "type": "image",
+        "key": "rpg_buildings",
+        "url": "assets/tilesets/buildings/4_buildings.png"
+      },
+      {
+        "type": "image",
+        "key": "rpg_roofs",
+        "url": "assets/tilesets/buildings/11_roofs.png"
+      },
+      {
+        "type": "image",
+        "key": "rpg_indoors",
+        "url": "assets/tilesets/buildings/2_indoors.png"
+      },
+      {
+        "type": "image",
+        "key": "rpg_plants",
+        "url": "assets/tilesets/buildings/3_plants.png"
+      },
+      {
+        "type": "image",
+        "key": "rpg_beach",
+        "url": "assets/tilesets/buildings/9_beach.png"
+      },
+      {
         "type": "tilemapTiledJSON",
         "key": "island",
         "url": "assets/tilemaps/island.json"
