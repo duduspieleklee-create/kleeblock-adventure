@@ -21,6 +21,25 @@
       "message": "You are now an official Island Explorer!"
     }
   },
+  "find_supplies": {
+    "title": "Find Supplies",
+    "description": "Collect supply crates scattered around the island.",
+    "itemKey": "supply_crate",
+    "requiredCount": 3,
+    "objectives": [
+      {
+        "id": "collect_supplies",
+        "description": "Collect 3 supply crates",
+        "type": "item",
+        "targetId": "supply_crate",
+        "requiredCount": 3
+      }
+    ],
+    "reward": {
+      "stateFlag": "has_supplies",
+      "message": "Supplies secured. The island is a little safer."
+    }
+  },
   "ocean_watch": {
     "title": "Ocean Watch",
     "description": "Check the dangerous waters.",
