@@ -11,6 +11,7 @@ import { InputEvents, InteractTargetPayload, ItemEvents, QuestEvents } from '../
 import { loadIslandMap, getNpcSpawns, getPlayerSpawn, MAP_DEPTH } from '../maps/MapLoader';
 import { isFootprintWalkable } from '../maps/Walkability';
 import { DebugOverlay, isDebugMode } from '../debug/DebugOverlay';
+import { AssetKeys } from '../config/AssetKeys';
 
 const DEFAULT_SCENERY = [
   { x: 120, y: 100, width: 12, height: 10, name: 'trunk_nw' },
@@ -42,8 +43,8 @@ export class IslandScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.dialogueData = this.cache.json.get('dialogues') ?? {};
-    this.questsData = this.cache.json.get('quests') ?? {};
+    this.dialogueData = this.cache.json.get(AssetKeys.Data.DIALOGUES) ?? {};
+    this.questsData = this.cache.json.get(AssetKeys.Data.QUESTS) ?? {};
 
     const loaded = loadIslandMap(this);
     if (!loaded) {

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { applyCharacterBodyWhenReady } from './characterBody';
+import { AssetKeys } from '../config/AssetKeys';
 
 /**
  * Player sprite + animations.
@@ -10,7 +11,7 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
   private lastDir: 'down' | 'side' | 'up' = 'down';
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'ss_idle', 1);
+    super(scene, x, y, AssetKeys.Characters.IDLE, 1);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -33,57 +34,57 @@ export class SunnysidePlayer extends Phaser.Physics.Arcade.Sprite {
 
     scene.anims.create({
       key: 'ss_idle_down',
-      frames: idleDown.map((f) => ({ key: 'ss_idle', frame: f })),
+      frames: idleDown.map((f) => ({ key: AssetKeys.Characters.IDLE, frame: f })),
       frameRate: 6,
       repeat: -1,
     });
     scene.anims.create({
       key: 'ss_idle_side',
-      frames: idleSide.map((f) => ({ key: 'ss_idle', frame: f })),
+      frames: idleSide.map((f) => ({ key: AssetKeys.Characters.IDLE, frame: f })),
       frameRate: 6,
       repeat: -1,
     });
     scene.anims.create({
       key: 'ss_idle_up',
-      frames: idleUp.map((f) => ({ key: 'ss_idle', frame: f })),
+      frames: idleUp.map((f) => ({ key: AssetKeys.Characters.IDLE, frame: f })),
       frameRate: 6,
       repeat: -1,
     });
 
     scene.anims.create({
       key: 'ss_walk_down',
-      frames: walkDown.map((f) => ({ key: 'ss_walk', frame: f })),
+      frames: walkDown.map((f) => ({ key: AssetKeys.Characters.WALK, frame: f })),
       frameRate: 10,
       repeat: -1,
     });
     scene.anims.create({
       key: 'ss_walk_side',
-      frames: walkSide.map((f) => ({ key: 'ss_walk', frame: f })),
+      frames: walkSide.map((f) => ({ key: AssetKeys.Characters.WALK, frame: f })),
       frameRate: 10,
       repeat: -1,
     });
     scene.anims.create({
       key: 'ss_walk_up',
-      frames: walkUp.map((f) => ({ key: 'ss_walk', frame: f })),
+      frames: walkUp.map((f) => ({ key: AssetKeys.Characters.WALK, frame: f })),
       frameRate: 10,
       repeat: -1,
     });
 
     scene.anims.create({
       key: 'ss_run_down',
-      frames: walkDown.map((f) => ({ key: 'ss_run', frame: f })),
+      frames: walkDown.map((f) => ({ key: AssetKeys.Characters.RUN, frame: f })),
       frameRate: 14,
       repeat: -1,
     });
     scene.anims.create({
       key: 'ss_run_side',
-      frames: walkSide.map((f) => ({ key: 'ss_run', frame: f })),
+      frames: walkSide.map((f) => ({ key: AssetKeys.Characters.RUN, frame: f })),
       frameRate: 14,
       repeat: -1,
     });
     scene.anims.create({
       key: 'ss_run_up',
-      frames: walkUp.map((f) => ({ key: 'ss_run', frame: f })),
+      frames: walkUp.map((f) => ({ key: AssetKeys.Characters.RUN, frame: f })),
       frameRate: 14,
       repeat: -1,
     });

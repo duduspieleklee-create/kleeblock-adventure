@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AssetKeys } from '../config/AssetKeys';
 
 /** Depth convention for island tile layers (world only). */
 export const MAP_DEPTH = {
@@ -39,9 +40,9 @@ const REQUIRED_TILE_LAYERS = ['sea', 'ground', 'collision'] as const;
  */
 export function loadIslandMap(
   scene: Phaser.Scene,
-  mapKey = 'island',
-  tilesetName = 'sunnyside',
-  tilesetImageKey = 'sunnyside',
+  mapKey = AssetKeys.Tilemaps.ISLAND,
+  tilesetName = AssetKeys.Tilesets.SUNNYSIDE,
+  tilesetImageKey = AssetKeys.Tilesets.SUNNYSIDE,
 ): LoadedIslandMap | null {
   const map = scene.make.tilemap({ key: mapKey });
 

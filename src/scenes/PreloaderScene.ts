@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { UI_CONFIG, TEXT_STYLES } from '../ui/UIConstants';
 import { log } from '../utils/logger';
+import { AssetKeys } from '../config/AssetKeys';
 
 export class PreloaderScene extends Phaser.Scene {
   private errorText?: Phaser.GameObjects.Text;
@@ -77,11 +78,36 @@ export class PreloaderScene extends Phaser.Scene {
       },
     });
 
-    try {
-      this.load.pack('game_assets', 'assets/pack.json');
-    } catch (e) {
-      log.error('[Preloader] Failed to load asset pack:', e);
-    }
+    // ── Explicit asset loading (better error handling than pack.json) ──
+    // Tilesets
+    this.load.image(AssetKeys.Tilesets.SUNNYSIDE, 'assets/tilesets/spr_tileset_sunnysideworld_16px.png');
+    this.load.image(AssetKeys.Tilesets.RPG_TERRAIN, 'assets/tilesets/buildings/1_terrain.png');
+    this.load.image(AssetKeys.Tilesets.RPG_BUILDINGS, 'assets/tilesets/buildings/4_buildings.png');
+    this.load.image(AssetKeys.Tilesets.RPG_ROOFS, 'assets/tilesets/buildings/11_roofs.png');
+    this.load.image(AssetKeys.Tilesets.RPG_INDOORS, 'assets/tilesets/buildings/2_indoors.png');
+    this.load.image(AssetKeys.Tilesets.RPG_PLANTS, 'assets/tilesets/buildings/3_plants.png');
+    this.load.image(AssetKeys.Tilesets.RPG_BEACH, 'assets/tilesets/buildings/9_beach.png');
+
+    // Tilemaps
+    this.load.tilemapTiledJSON(AssetKeys.Tilemaps.ISLAND, 'assets/tilemaps/island.json');
+
+    // Data
+    this.load.json(AssetKeys.Data.DIALOGUES, 'assets/data/dialogues.json');
+    this.load.json(AssetKeys.Data.QUESTS, 'assets/data/quests.json');
+
+    // Character spritesheets
+    this.load.spritesheet(AssetKeys.Characters.IDLE, 'assets/characters/sunnyside/base_idle_strip9.png', {
+      frameWidth: 96,
+      frameHeight: 64,
+    });
+    this.load.spritesheet(AssetKeys.Characters.WALK, 'assets/characters/sunnyside/base_walk_strip8.png', {
+      frameWidth: 96,
+      frameHeight: 64,
+    });
+    this.load.spritesheet(AssetKeys.Characters.RUN, 'assets/characters/sunnyside/base_run_strip8.png', {
+      frameWidth: 96,
+      frameHeight: 64,
+    });
 
     void title;
   }
