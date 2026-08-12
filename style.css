@@ -1,27 +1,22 @@
 html,
 body {
   margin: 0;
-  padding: 0;
-  height: 100%;
   width: 100%;
-  background: #111;
+  height: 100%;
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background: #000;
 }
 
 #game-container {
   width: 100%;
-  max-width: 960px;
-  min-width: 320px;
-  height: auto;
-  aspect-ratio: 4 / 3;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #game-container canvas {
-  width: 100% !important;
-  height: 100% !important;
+  display: block;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
