@@ -70,10 +70,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   private checkLayout(): boolean {
-    // Use Phaser's display size (canvas element size) instead of window.innerWidth
-    // which includes dev tools space and causes false "too small" triggers
-    const w = this.scale.displaySize.width;
-    const h = this.scale.displaySize.height;
+    // Use Phaser's game size (logical canvas size) which accounts for scale mode
+    // displaySize includes CSS scaling; gameSize is the actual game resolution
+    const w = this.scale.gameSize.width;
+    const h = this.scale.gameSize.height;
 
     console.log('[Boot] checkLayout:', w, '×', h, 'min=', Math.min(w, h), 'tooSmall=', Math.min(w, h) < MIN_VIEWPORT);
 
@@ -85,13 +85,16 @@ export class BootScene extends Phaser.Scene {
     const tooSmall = Math.min(w, h) < MIN_VIEWPORT;
     // Only enforce landscape lock on actual mobile devices with small screens
     // Desktop browsers with "mobile" in UA (e.g. dev tools device emulation) should not trigger
-    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && Math.max(w, h) <= 1024;
-    const landscape = isMobile && w > h;
+    const isMobileDevice = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    const isSmallScreen = Math.max(w, h) <= 1024;
+    const isMobile = isMobileDevice && isSmallScreen;
+    // Only show rotate prompt on mobile portrait devices that are in landscape orientation
+    const needsPortrait = isMobile && w > h;
 
-    console.log('[Boot] tooSmall=', tooSmall, 'isMobile=', isMobile, 'landscape=', landscape);
+    console.log('[Boot] tooSmall=', tooSmall, 'isMobile=', isMobile, 'needsPortrait=', needsPortrait);
 
-    if (tooSmall || landscape) {
-      this.showGateOverlay(tooSmall, landscape);
+    if (tooSmall || needsPortrait) {
+      this.showGateOverlay(tooSmall, needsPortrait);
       return false;
     }
 

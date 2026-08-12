@@ -33,7 +33,7 @@ export class DialogBox extends Phaser.GameObjects.Container {
     this.add(this.bg);
 
     this.textBox = scene.add
-      .text(0, 0, '', {
+      .text(0, 0, ' ', {
         ...TEXT_STYLES.body,
         fontSize: '16px',
         color: '#e8e8e8',
@@ -81,6 +81,12 @@ export class DialogBox extends Phaser.GameObjects.Container {
     this.textBox.setWordWrapWidth(Math.round(wrapW));
 
     // Measure with full text for stable height
+    // Guard: skip measurement if text frame is not ready (font still loading)
+    if (!this.textBox.frame) {
+      this.panelH = 120; // fallback height
+      this.setPosition(Math.round(width / 2), Math.round(height - margin - this.panelH / 2));
+      return;
+    }
     const prev = this.textBox.text;
     this.textBox.setText(this.fullText || ' ');
     const bounds = this.textBox.getBounds();
@@ -103,7 +109,12 @@ export class DialogBox extends Phaser.GameObjects.Container {
     this.displayedText = '';
     this.charIndex = 0;
     this.isComplete = false;
-    this.textBox.setText('');
+    // Guard: ensure text object has valid frame before setting empty string
+    // Phaser Text can throw "Cannot read properties of null (reading 'drawImage')"
+    // if the texture frame is not ready when setText('') is called
+    if (this.textBox.frame) {
+      this.textBox.setText('');
+    }
     this.continueIndicator?.setAlpha(0);
     this.layout();
     this.startTypewriter();
