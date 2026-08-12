@@ -1,14 +1,14 @@
 import Phaser from 'phaser';
 import { BASE_WIDTH, BASE_HEIGHT } from '../config/GameConfig';
+import { UI_CONFIG, TEXT_STYLES } from '../ui/UIConstants';
 
 const MIN_VIEWPORT = 320;
 
 /**
  * BootScene
  *
- * First scene. Validates that the browser viewport is at least
- * 320×320 and, on mobile, prefers portrait. Uses Phaser logical
- * size for drawing overlays (not window dimensions as gameplay coords).
+ * First scene. Waits for GameFont (Milestone 3.2), validates viewport,
+ * then advances to PreloaderScene.
  */
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -18,12 +18,35 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     this.logScaleDimensions();
 
+    void this.bootSequence();
+  }
+
+  private async bootSequence(): Promise<void> {
+    await this.waitForFonts();
+
     if (this.checkLayout()) {
       this.scene.start('PreloaderScene');
     }
   }
 
-  /** Milestone 1.4 — verify logical vs display size. */
+  /** Milestone 3.2 — avoid layout jump from late font load. */
+  private async waitForFonts(): Promise<void> {
+    try {
+      if (typeof document !== 'undefined' && document.fonts) {
+        // Explicitly request the game face so we do not proceed on fallback metrics only.
+        await document.fonts.load(`16px ${UI_CONFIG.FONT_FAMILY}`);
+        await document.fonts.ready;
+
+        if (import.meta.env.DEV) {
+          const loaded = document.fonts.check(`16px GameFont`);
+          console.log('[Boot] GameFont ready:', loaded);
+        }
+      }
+    } catch (err) {
+      console.warn('[Boot] Font wait failed; continuing with fallback metrics', err);
+    }
+  }
+
   private logScaleDimensions(): void {
     if (!import.meta.env.DEV) return;
 
@@ -34,7 +57,6 @@ export class BootScene extends Phaser.Scene {
   }
 
   private checkLayout(): boolean {
-    // Browser viewport check only — not used as gameplay coordinates.
     const w = window.innerWidth;
     const h = window.innerHeight;
 
@@ -74,11 +96,10 @@ export class BootScene extends Phaser.Scene {
     lines.push('');
     lines.push('Resize or rotate to continue.');
 
-    const text = this.add
+    this.add
       .text(Math.round(width / 2), Math.round(height / 2), lines.join('\n'), {
-        fontFamily: 'monospace',
-        fontSize: '24px',
-        color: '#ffffff',
+        ...TEXT_STYLES.body,
+        fontSize: '18px',
         align: 'center',
         lineSpacing: 8,
       })
@@ -86,18 +107,8 @@ export class BootScene extends Phaser.Scene {
       .setDepth(100000);
 
     this.scale.once('resize', () => {
-      overlay.destroy();
-      text.destroy();
-      if (this.checkLayout()) {
-        this.scene.start('PreloaderScene');
-      } else {
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        this.showGateOverlay(
-          Math.min(vw, vh) < MIN_VIEWPORT,
-          /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && vw > vh,
-        );
-      }
+      // Recreate gate on orientation/size change
+      this.scene.restart();
     });
   }
 }
