@@ -83,7 +83,9 @@ export class BootScene extends Phaser.Scene {
     }
 
     const tooSmall = Math.min(w, h) < MIN_VIEWPORT;
-    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    // Only enforce landscape lock on actual mobile devices with small screens
+    // Desktop browsers with "mobile" in UA (e.g. dev tools device emulation) should not trigger
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && Math.max(w, h) <= 1024;
     const landscape = isMobile && w > h;
 
     console.log('[Boot] tooSmall=', tooSmall, 'isMobile=', isMobile, 'landscape=', landscape);
