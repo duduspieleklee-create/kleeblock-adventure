@@ -11,13 +11,10 @@ export type InputManagerConfig = {
   player: Phaser.Physics.Arcade.Sprite;
   speed?: number;
   pointer?: PointerControllerOptions;
-  /** Enable virtual joystick (default: false). Auto-shown on touch if true. */
+  /** Enable virtual joystick (default: false). */
   enableJoystick?: boolean;
 };
 
-/**
- * Keyboard, mouse, touch, and optional joystick → PlayerInputController.
- */
 export class InputManager {
   readonly inputController: PlayerInputController;
   readonly movement: PlayerMovementController;
@@ -60,12 +57,11 @@ export class InputManager {
     const wantJoystick = config.enableJoystick === true;
     if (wantJoystick) {
       this.joystick = new VirtualJoystick(scene, this.inputController);
-      // Show on touch-capable devices by default when flag is on
-      this.joystick.setEnabled(this.device.touch);
+      this.joystick.setEnabled(true);
     }
 
     if (import.meta.env.DEV) {
-      console.log('[InputManager] device:', this.device, 'joystick:', wantJoystick && this.device.touch);
+      console.log('[InputManager] device:', this.device, 'joystick:', wantJoystick);
     }
   }
 
