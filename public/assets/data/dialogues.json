@@ -12,5 +12,26 @@
       "No monsters, just good vibes!",
       "After you meet the locals, keep an eye out for supply crates."
     ]
+  },
+  "village_elder": {
+    "sequence": [
+      "Greetings, traveler.",
+      "Our village has stood here for generations.",
+      "If you need supplies, check near the forest edge."
+    ]
+  },
+  "forest_shopkeeper": {
+    "sequence": [
+      "Looking for something special?",
+      "I have tools and rations from the mainland.",
+      "The forest path is safe during the day."
+    ]
+  },
+  "beach_villager": {
+    "sequence": [
+      "I collect shells from the southern shore.",
+      "Sometimes the tide brings strange items.",
+      "Watch your step near the cliffs."
+    ]
   }
 }

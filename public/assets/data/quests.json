@@ -3,23 +3,10 @@
     "title": "Island Explorer",
     "description": "Get to know the island and its inhabitants.",
     "objectives": [
-      {
-        "id": "talk_to_welcome",
-        "description": "Speak with the Welcome NPC",
-        "type": "dialogue",
-        "targetId": "welcome_npc"
-      },
-      {
-        "id": "talk_to_vibes",
-        "description": "Speak with the Vibes NPC",
-        "type": "dialogue",
-        "targetId": "vibes_npc"
-      }
+      {"id": "talk_to_welcome", "description": "Speak with the Welcome NPC", "type": "dialogue", "targetId": "welcome_npc"},
+      {"id": "talk_to_vibes", "description": "Speak with the Vibes NPC", "type": "dialogue", "targetId": "vibes_npc"}
     ],
-    "reward": {
-      "stateFlag": "is_explorer",
-      "message": "You are now an official Island Explorer!"
-    }
+    "reward": {"stateFlag": "is_explorer", "message": "You are now an official Island Explorer!"}
   },
   "find_supplies": {
     "title": "Find Supplies",
@@ -27,33 +14,33 @@
     "itemKey": "supply_crate",
     "requiredCount": 3,
     "objectives": [
-      {
-        "id": "collect_supplies",
-        "description": "Collect 3 supply crates",
-        "type": "item",
-        "targetId": "supply_crate",
-        "requiredCount": 3
-      }
+      {"id": "collect_supplies", "description": "Collect 3 supply crates", "type": "item", "targetId": "supply_crate", "requiredCount": 3}
     ],
-    "reward": {
-      "stateFlag": "has_supplies",
-      "message": "Supplies secured. The island is a little safer."
-    }
+    "reward": {"stateFlag": "has_supplies", "message": "Supplies secured. The island is a little safer."}
+  },
+  "village_visit": {
+    "title": "Village Visit",
+    "description": "Meet the village elder and learn about the island's history.",
+    "objectives": [
+      {"id": "talk_to_elder", "description": "Speak with the Village Elder", "type": "dialogue", "targetId": "village_elder"}
+    ],
+    "reward": {"stateFlag": "knows_village", "message": "You've learned about the village's history."}
+  },
+  "forest_run": {
+    "title": "Forest Run",
+    "description": "Visit the forest shopkeeper and get some supplies.",
+    "objectives": [
+      {"id": "talk_to_shopkeeper", "description": "Speak with the Forest Shopkeeper", "type": "dialogue", "targetId": "forest_shopkeeper"},
+      {"id": "collect_items", "description": "Collect 2 items from the forest", "type": "item", "targetId": "forest_item", "requiredCount": 2}
+    ],
+    "reward": {"stateFlag": "has_forest_supplies", "message": "Forest supplies secured."}
   },
   "ocean_watch": {
     "title": "Ocean Watch",
     "description": "Check the dangerous waters.",
     "objectives": [
-      {
-        "id": "visit_shore",
-        "description": "Reach the southern shore",
-        "type": "location",
-        "targetId": "southern_shore"
-      }
+      {"id": "visit_shore", "description": "Reach the southern shore", "type": "location", "targetId": "southern_shore"}
     ],
-    "reward": {
-      "stateFlag": "knows_ocean",
-      "message": "You've seen the depths of the ocean."
-    }
+    "reward": {"stateFlag": "knows_ocean", "message": "You've seen the depths of the ocean."}
   }
 }
