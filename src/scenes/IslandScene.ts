@@ -15,6 +15,7 @@ import {
   MAP_DEPTH,
 } from '../maps/MapLoader';
 import { isFootprintWalkable } from '../maps/Walkability';
+import { DebugOverlay, isDebugMode } from '../debug/DebugOverlay';
 
 const DEFAULT_SCENERY = [
   { x: 120, y: 100, width: 12, height: 10, name: 'trunk_nw' },
@@ -30,11 +31,13 @@ export class IslandScene extends Phaser.Scene {
   private map!: Phaser.Tilemaps.Tilemap;
 
   private collisionLayer!: Phaser.Tilemaps.TilemapLayer;
+  private collisionDebugGfx?: Phaser.GameObjects.Graphics;
 
   private interactionManager?: InteractionManager;
   private questManager?: QuestManager;
   private spawnManager?: SpawnManager;
   private inputManager?: InputManager;
+  private debugOverlay?: DebugOverlay;
 
   private dialogueData: Record<string, { sequence: string[] }> = {};
   private questsData: Record<string, Quest> = {};
@@ -62,7 +65,6 @@ export class IslandScene extends Phaser.Scene {
     this.setupNPCs();
     this.setupScenery();
     this.setupCamera(loaded.map);
-    this.setupDebug();
     this.setupInput();
 
     const npcs = this.npcGroup.getChildren() as NPC[];
@@ -72,6 +74,7 @@ export class IslandScene extends Phaser.Scene {
     this.spawnManager = new SpawnManager(this, this.map, this.collisionLayer);
     this.setupItemCollection();
     this.setupQuestTriggers();
+    this.setupDebugTools();
 
     if (!this.scene.isActive('UIScene')) {
       this.scene.launch('UIScene', {
@@ -226,20 +229,6 @@ export class IslandScene extends Phaser.Scene {
 
   private setupPhysics(map: Phaser.Tilemaps.Tilemap): void {
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-
-    if (this.isPhysicsDebugEnabled()) {
-      this.physics.world.createDebugGraphic();
-      this.physics.world.drawDebug = true;
-    }
-  }
-
-  private isPhysicsDebugEnabled(): boolean {
-    try {
-      const value = new URLSearchParams(window.location.search).get('debug');
-      return value === '1' || value === 'true';
-    } catch {
-      return false;
-    }
   }
 
   private setupPlayer(): void {
@@ -300,11 +289,15 @@ export class IslandScene extends Phaser.Scene {
     cam.setRoundPixels(true);
   }
 
-  private setupDebug(): void {
-    if (!this.isPhysicsDebugEnabled()) return;
+  /** Milestone 11 — physics / collision / overlay only when ?debug=1 */
+  private setupDebugTools(): void {
+    if (!isDebugMode()) return;
 
-    const debugGraphics = this.add.graphics().setAlpha(0.6).setDepth(50);
-    this.collisionLayer.renderDebug(debugGraphics, {
+    this.physics.world.createDebugGraphic();
+    this.physics.world.drawDebug = true;
+
+    this.collisionDebugGfx = this.add.graphics().setAlpha(0.6).setDepth(50).setVisible(true);
+    this.collisionLayer.renderDebug(this.collisionDebugGfx, {
       tileColor: null,
       collidingTileColor: new Phaser.Display.Color(243, 134, 48, 200),
       faceColor: new Phaser.Display.Color(40, 39, 37, 255),
@@ -318,10 +311,28 @@ export class IslandScene extends Phaser.Scene {
       r.setStrokeStyle(1, 0x00ffff, 0.9);
     });
 
-    this.physics.world.createDebugGraphic();
-    this.physics.world.drawDebug = true;
+    this.debugOverlay = new DebugOverlay(
+      this,
+      {
+        getPlayerPos: () => ({ x: this.player.x, y: this.player.y }),
+        questManager: this.questManager,
+      },
+      {
+        onToggleCollision: (show) => this.setCollisionDebugVisible(show),
+      },
+    );
 
-    console.log('[IslandScene] Physics + collision + scenery debug (?debug=1)');
+    console.log('[IslandScene] Debug tools active (?debug=1)  F1 panel · F2 collision · F3 reset quests');
+  }
+
+  private setCollisionDebugVisible(show: boolean): void {
+    this.collisionDebugGfx?.setVisible(show);
+    this.collisionLayer.setVisible(show);
+    if (show) this.collisionLayer.setAlpha(0.35);
+    this.physics.world.drawDebug = show;
+    this.sceneryGroup?.getChildren().forEach((child) => {
+      (child as Phaser.GameObjects.Rectangle).setVisible(show);
+    });
   }
 
   private setupQuestTriggers(): void {
@@ -391,6 +402,7 @@ export class IslandScene extends Phaser.Scene {
     this.inputManager?.shutdown();
     this.interactionManager?.shutdown();
     this.spawnManager?.shutdown();
+    this.debugOverlay?.shutdown();
 
     if (this.scene.isActive('UIScene')) {
       this.scene.stop('UIScene');
