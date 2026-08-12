@@ -47,7 +47,9 @@ export function loadIslandMap(
 
   const tileset = map.addTilesetImage(tilesetName, tilesetImageKey);
   if (!tileset) {
-    console.error(`[MapLoader] Tileset "${tilesetName}" failed to load (image key "${tilesetImageKey}")`);
+    console.error(
+      `[MapLoader] Tileset "${tilesetName}" failed to load (image key "${tilesetImageKey}")`,
+    );
     return null;
   }
 
@@ -80,7 +82,13 @@ export function loadIslandMap(
     undefined;
   decor?.setDepth(MAP_DEPTH.DECOR);
 
-  const collisionLayer = map.createLayer('collision', tileset, 0, 0, false) as Phaser.Tilemaps.TilemapLayer | null;
+  const collisionLayer = map.createLayer(
+    'collision',
+    tileset,
+    0,
+    0,
+    false,
+  ) as Phaser.Tilemaps.TilemapLayer | null;
   if (!collisionLayer) {
     console.error('[MapLoader] Collision layer not found');
     return null;
@@ -125,10 +133,7 @@ function logObjectLayerSummary(map: Phaser.Tilemaps.Tilemap): void {
 }
 
 /** Read typed points from an object layer. */
-export function getMapObjects(
-  map: Phaser.Tilemaps.Tilemap,
-  layerName: string,
-): MapObjectPoint[] {
+export function getMapObjects(map: Phaser.Tilemaps.Tilemap, layerName: string): MapObjectPoint[] {
   const layer = map.getObjectLayer(layerName);
   if (!layer) return [];
 

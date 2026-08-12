@@ -9,12 +9,7 @@ export function isPointWalkable(
   worldX: number,
   worldY: number,
 ): boolean {
-  if (
-    worldX < 0 ||
-    worldY < 0 ||
-    worldX >= map.widthInPixels ||
-    worldY >= map.heightInPixels
-  ) {
+  if (worldX < 0 || worldY < 0 || worldX >= map.widthInPixels || worldY >= map.heightInPixels) {
     return false;
   }
 

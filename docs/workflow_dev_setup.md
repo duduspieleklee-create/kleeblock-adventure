@@ -1,7 +1,5 @@
 Understood. The **“more people share work” / multi-developer workload-splitting section is removed for now**. The workflow will stay focused on task tracking, milestone completion, resuming work, and a solo-developer or small-team process.
 
-
-
 ## Streamlined CI/CD pipeline
 
 The deployment flow remains:

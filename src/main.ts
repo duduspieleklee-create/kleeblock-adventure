@@ -7,12 +7,14 @@ import { IslandScene } from './scenes/IslandScene';
 import { UIScene } from './scenes/UIScene';
 
 // Always keep fatal hooks; verbose stack only needed in DEV
-window.onerror = (msg, _src, _line, _col, err) => {
-  console.error('GLOBAL ERROR:', msg, import.meta.env.DEV ? err?.stack : undefined);
-};
-window.onunhandledrejection = (ev) => {
-  console.error('UNHANDLED REJECTION:', ev.reason);
-};
+if (import.meta.env.DEV) {
+  window.onerror = (msg, _src, _line, _col, err) => {
+    console.error('GLOBAL ERROR:', msg, err?.stack);
+  };
+  window.onunhandledrejection = (ev) => {
+    console.error('UNHANDLED REJECTION:', ev.reason);
+  };
+}
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

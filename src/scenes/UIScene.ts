@@ -134,10 +134,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     if (this.versionText) {
-      this.versionText.setPosition(
-        Math.round(UI_CONFIG.MARGIN / 2),
-        Math.round(height - 18),
-      );
+      this.versionText.setPosition(Math.round(UI_CONFIG.MARGIN / 2), Math.round(height - 18));
     }
 
     // Action buttons bottom-right with spacing (Milestone 5.5)

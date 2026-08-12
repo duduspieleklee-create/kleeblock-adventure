@@ -13,11 +13,7 @@ export class PlayerMovementController {
   private readonly speed: number;
   private destinationMarker?: DestinationMarker;
 
-  constructor(
-    input: PlayerInputController,
-    player: Phaser.Physics.Arcade.Sprite,
-    speed = 80,
-  ) {
+  constructor(input: PlayerInputController, player: Phaser.Physics.Arcade.Sprite, speed = 80) {
     this.input = input;
     this.player = player;
     this.speed = speed;

@@ -17,9 +17,7 @@ export const CHARACTER_BODY = {
 } as const;
 
 /** Apply the standard feet hitbox to a physics sprite. Safe to call more than once. */
-export function applyCharacterBody(
-  sprite: Phaser.Physics.Arcade.Sprite,
-): void {
+export function applyCharacterBody(sprite: Phaser.Physics.Arcade.Sprite): void {
   const body = sprite.body;
   if (!body || !(body instanceof Phaser.Physics.Arcade.Body)) return;
 

@@ -1,4 +1,4 @@
-```md
+````md
 # AI_CONTEXT.md — Kleeblock Adventure
 
 > **Purpose:** Stable navigation and governance document for AI contributors and developers.
@@ -29,17 +29,17 @@ If a change affects a stable rule or project contract, update both this file and
 
 ## Project Snapshot
 
-| Item | Value |
-|---|---|
-| Project | Kleeblock Adventure |
-| Genre | Top-down 2D pixel adventure / RPG prototype |
-| Engine | Phaser 4 |
-| Phaser version | `phaser@^4.2.1` |
-| Language | TypeScript with strict mode |
-| Bundler | Vite 8 |
-| Map editor | Tiled with JSON export |
-| Art style | SunnySide World 16×16 pixel tiles and character strips |
-| Logical resolution | `1280 × 720` |
+| Item               | Value                                                  |
+| ------------------ | ------------------------------------------------------ |
+| Project            | Kleeblock Adventure                                    |
+| Genre              | Top-down 2D pixel adventure / RPG prototype            |
+| Engine             | Phaser 4                                               |
+| Phaser version     | `phaser@^4.2.1`                                        |
+| Language           | TypeScript with strict mode                            |
+| Bundler            | Vite 8                                                 |
+| Map editor         | Tiled with JSON export                                 |
+| Art style          | SunnySide World 16×16 pixel tiles and character strips |
+| Logical resolution | `1280 × 720`                                           |
 
 ---
 
@@ -108,13 +108,14 @@ Rules:
 All input sources must pass through one platform-independent input layer, such as:
 
 ```ts
-PlayerInputController
+PlayerInputController;
 ```
+````
 
 or:
 
 ```ts
-InputManager
+InputManager;
 ```
 
 The input layer must normalize keyboard, mouse, touch, and optional joystick input into shared commands.
@@ -143,7 +144,7 @@ Support:
 For pointer movement, convert screen coordinates to world coordinates using the active camera, for example:
 
 ```ts
-camera.getWorldPoint(pointer.x, pointer.y)
+camera.getWorldPoint(pointer.x, pointer.y);
 ```
 
 #### Mobile Input
@@ -264,13 +265,7 @@ font-display: block;
 - Preload important `.woff2` fonts in `index.html` when appropriate:
 
 ```html
-<link
-  rel="preload"
-  href="/assets/fonts/your-font.woff2"
-  as="font"
-  type="font/woff2"
-  crossorigin
-/>
+<link rel="preload" href="/assets/fonts/your-font.woff2" as="font" type="font/woff2" crossorigin />
 ```
 
 - Wait for font availability before creating dependent text where necessary, for example in a boot or preload scene.
@@ -518,25 +513,25 @@ Before marking a change as complete, verify:
 
 Use these as the first places to look when making changes:
 
-| Task | Primary files |
-|---|---|
-| Phaser config and scale | `src/main.ts` |
-| World scene | `src/scenes/IslandScene.ts` |
-| UI scene | `src/scenes/UIScene.ts` |
-| UI constants and styles | `src/ui/UIConstants.ts` |
-| UI scaling helpers | `src/ui/UIScale.ts` |
-| Quest HUD and questbook | `src/ui/QuestHUD.ts` |
-| Dialogue UI | `src/ui/DialogBox.ts` |
-| Input layer | `src/input/PlayerInputController.ts` |
-| Player movement | `src/objects/SunnysidePlayer.ts` or the current player class |
-| NPC interaction | `src/managers/InteractionManager.ts`, `src/objects/NPC.ts` |
-| Spawn logic | `src/managers/SpawnManager.ts` |
-| Quest state | `src/managers/QuestManager.ts` |
-| Quest data | `public/assets/data/quests.json` |
-| Static island map | `public/assets/tilemaps/island.json` |
-| Map and world metadata | Tiled project files and object layers |
-| Asset loading | `public/assets/pack.json`, `src/scenes/PreloaderScene.ts` |
-| Fonts and assets | `public/assets/`, `index.html`, `src/style.css` |
+| Task                    | Primary files                                                |
+| ----------------------- | ------------------------------------------------------------ |
+| Phaser config and scale | `src/main.ts`                                                |
+| World scene             | `src/scenes/IslandScene.ts`                                  |
+| UI scene                | `src/scenes/UIScene.ts`                                      |
+| UI constants and styles | `src/ui/UIConstants.ts`                                      |
+| UI scaling helpers      | `src/ui/UIScale.ts`                                          |
+| Quest HUD and questbook | `src/ui/QuestHUD.ts`                                         |
+| Dialogue UI             | `src/ui/DialogBox.ts`                                        |
+| Input layer             | `src/input/PlayerInputController.ts`                         |
+| Player movement         | `src/objects/SunnysidePlayer.ts` or the current player class |
+| NPC interaction         | `src/managers/InteractionManager.ts`, `src/objects/NPC.ts`   |
+| Spawn logic             | `src/managers/SpawnManager.ts`                               |
+| Quest state             | `src/managers/QuestManager.ts`                               |
+| Quest data              | `public/assets/data/quests.json`                             |
+| Static island map       | `public/assets/tilemaps/island.json`                         |
+| Map and world metadata  | Tiled project files and object layers                        |
+| Asset loading           | `public/assets/pack.json`, `src/scenes/PreloaderScene.ts`    |
+| Fonts and assets        | `public/assets/`, `index.html`, `src/style.css`              |
 
 If a listed file does not exist, locate the project's current equivalent before creating a new abstraction.
 
@@ -566,4 +561,7 @@ Update the **Revised Consolidated Development Plan** for:
 - Deprecated or completed implementation steps
 
 Keep this file stable, concise, and reviewable. Do not allow it to become a second copy of the development roadmap.
+
+```
+
 ```

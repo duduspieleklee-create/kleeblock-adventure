@@ -61,10 +61,7 @@ export class QuestHUD {
   }
 
   private createTracker(): void {
-    this.trackerContainer = this.scene.add
-      .container(0, 0)
-      .setScrollFactor(0)
-      .setDepth(9998);
+    this.trackerContainer = this.scene.add.container(0, 0).setScrollFactor(0).setDepth(9998);
 
     this.positionTracker();
   }
@@ -75,7 +72,11 @@ export class QuestHUD {
     this.trackerContainer.setPosition(padX, padY);
   }
 
-  private formatObjectiveLine(quest: Quest, status: QuestStatus, obj: Quest['objectives'][0]): string {
+  private formatObjectiveLine(
+    quest: Quest,
+    status: QuestStatus,
+    obj: Quest['objectives'][0],
+  ): string {
     if (obj.type === 'item') {
       const required = obj.requiredCount ?? quest.requiredCount ?? 1;
       const current = status.itemCounts?.[obj.id] ?? 0;
@@ -191,10 +192,7 @@ export class QuestHUD {
       .container(0, 0)
       .setScrollFactor(0)
       .setDepth(9999)
-      .setInteractive(
-        new Phaser.Geom.Rectangle(-20, -24, 40, 48),
-        Phaser.Geom.Rectangle.Contains,
-      );
+      .setInteractive(new Phaser.Geom.Rectangle(-20, -24, 40, 48), Phaser.Geom.Rectangle.Contains);
 
     this.rebuildBookIcon();
 

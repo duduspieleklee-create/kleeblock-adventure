@@ -44,4 +44,4 @@ Run after `npm run build && npm run preview` (or deployed build).
 
 ---
 
-**Sign-off:** Date ________  Build ________  Tester ________
+**Sign-off:** Date ________ Build ________ Tester ________

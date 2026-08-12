@@ -5,12 +5,10 @@ import Phaser from 'phaser';
  * Lives in the world scene; hide when arrived or cancelled.
  */
 export class DestinationMarker {
-  private readonly scene: Phaser.Scene;
   private readonly gfx: Phaser.GameObjects.Graphics;
   private visible = false;
 
   constructor(scene: Phaser.Scene) {
-    this.scene = scene;
     this.gfx = scene.add.graphics().setDepth(8);
   }
 

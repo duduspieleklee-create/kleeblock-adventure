@@ -120,13 +120,7 @@ const config: Phaser.Types.Core.GameConfig = {
     },
   },
 
-  scene: [
-    BootScene,
-    PreloaderScene,
-    MainMenuScene,
-    IslandScene,
-    UIScene,
-  ],
+  scene: [BootScene, PreloaderScene, MainMenuScene, IslandScene, UIScene],
 };
 
 new Phaser.Game(config);
@@ -332,33 +326,17 @@ const destination = inputController.getDestination();
 if (direction.lengthSq() > 0) {
   direction.normalize();
 
-  player.setVelocity(
-    direction.x * PLAYER_SPEED,
-    direction.y * PLAYER_SPEED
-  );
+  player.setVelocity(direction.x * PLAYER_SPEED, direction.y * PLAYER_SPEED);
 } else if (destination) {
-  const distance = Phaser.Math.Distance.Between(
-    player.x,
-    player.y,
-    destination.x,
-    destination.y
-  );
+  const distance = Phaser.Math.Distance.Between(player.x, player.y, destination.x, destination.y);
 
   if (distance <= 8) {
     player.setVelocity(0, 0);
     inputController.clearDestination();
   } else {
-    const angle = Phaser.Math.Angle.Between(
-      player.x,
-      player.y,
-      destination.x,
-      destination.y
-    );
+    const angle = Phaser.Math.Angle.Between(player.x, player.y, destination.x, destination.y);
 
-    player.setVelocity(
-      Math.cos(angle) * PLAYER_SPEED,
-      Math.sin(angle) * PLAYER_SPEED
-    );
+    player.setVelocity(Math.cos(angle) * PLAYER_SPEED, Math.sin(angle) * PLAYER_SPEED);
   }
 } else {
   player.setVelocity(0, 0);
@@ -382,15 +360,15 @@ if (direction.lengthSq() > 0) {
 
 ### Recommended controls
 
-| Input | Action |
-|---|---|
-| W / Arrow Up | Move up |
-| A / Arrow Left | Move left |
-| S / Arrow Down | Move down |
-| D / Arrow Right | Move right |
-| E | Interact |
-| I | Open Questbook |
-| Escape | Cancel movement / close panel |
+| Input           | Action                        |
+| --------------- | ----------------------------- |
+| W / Arrow Up    | Move up                       |
+| A / Arrow Left  | Move left                     |
+| S / Arrow Down  | Move down                     |
+| D / Arrow Right | Move right                    |
+| E               | Interact                      |
+| I               | Open Questbook                |
+| Escape          | Cancel movement / close panel |
 
 ---
 
@@ -416,15 +394,9 @@ this.input.on(
       return;
     }
 
-    const worldPoint = this.cameras.main.getWorldPoint(
-      pointer.x,
-      pointer.y
-    );
+    const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
 
-    const target = this.findInteractiveTarget(
-      worldPoint.x,
-      worldPoint.y
-    );
+    const target = this.findInteractiveTarget(worldPoint.x, worldPoint.y);
 
     if (target) {
       this.events.emit('input:interactTarget', {
@@ -434,19 +406,11 @@ this.input.on(
       return;
     }
 
-    if (
-      this.isWalkable(
-        worldPoint.x,
-        worldPoint.y
-      )
-    ) {
-      this.playerInput.moveToPoint(
-        worldPoint.x,
-        worldPoint.y
-      );
+    if (this.isWalkable(worldPoint.x, worldPoint.y)) {
+      this.playerInput.moveToPoint(worldPoint.x, worldPoint.y);
     }
   },
-  this
+  this,
 );
 ```
 
@@ -495,10 +459,7 @@ export class DeviceDetector {
   }
 
   static isHybrid(game: Phaser.Game): boolean {
-    return (
-      this.isTouchCapable(game) &&
-      this.supportsMouse(game)
-    );
+    return this.isTouchCapable(game) && this.supportsMouse(game);
   }
 }
 ```
@@ -553,13 +514,7 @@ Late-loading fonts can change text width and cause panels, labels, and dialogue 
 ### Implementation
 
 ```html
-<link
-  rel="preload"
-  href="/fonts/GameFont.woff2"
-  as="font"
-  type="font/woff2"
-  crossorigin
-/>
+<link rel="preload" href="/fonts/GameFont.woff2" as="font" type="font/woff2" crossorigin />
 ```
 
 ```css
@@ -673,11 +628,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   create() {
-    this.scale.on(
-      Phaser.Scale.Events.RESIZE,
-      this.relayout,
-      this
-    );
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.relayout, this);
 
     this.relayout();
   }
@@ -758,30 +709,13 @@ export class QuestHUD extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y);
 
-    const background = scene.add.rectangle(
-      0,
-      0,
-      360,
-      140,
-      0x1a1a2e,
-      0.95
-    );
+    const background = scene.add.rectangle(0, 0, 360, 140, 0x1a1a2e, 0.95);
 
     background.setOrigin(0, 0);
 
-    const title = scene.add.text(
-      16,
-      12,
-      'Quest',
-      TEXT_STYLES.title
-    );
+    const title = scene.add.text(16, 12, 'Quest', TEXT_STYLES.title);
 
-    const body = scene.add.text(
-      16,
-      48,
-      '',
-      TEXT_STYLES.body
-    );
+    const body = scene.add.text(16, 48, '', TEXT_STYLES.body);
 
     this.add([background, title, body]);
     scene.add.existing(this);
@@ -807,10 +741,7 @@ export class QuestHUD extends Phaser.GameObjects.Container {
 
 ```ts
 dialogText.setWordWrapWidth(panelWidth - 40);
-dialogBox.setPosition(
-  Math.round(x),
-  Math.round(y)
-);
+dialogBox.setPosition(Math.round(x), Math.round(y));
 ```
 
 ---
@@ -830,10 +761,7 @@ dialogBox.setPosition(
 ### Example
 
 ```ts
-export function getUIAnchors(
-  width: number,
-  height: number
-) {
+export function getUIAnchors(width: number, height: number) {
   return {
     topLeft: {
       x: UI_CONFIG.MARGIN,
@@ -901,15 +829,7 @@ Use a minimum touch target of **44–48 logical pixels**.
 const button = this.add
   .image(0, 0, 'questbook-icon')
   .setDisplaySize(32, 32)
-  .setInteractive(
-    new Phaser.Geom.Rectangle(
-      -8,
-      -8,
-      48,
-      48
-    ),
-    Phaser.Geom.Rectangle.Contains
-  );
+  .setInteractive(new Phaser.Geom.Rectangle(-8, -8, 48, 48), Phaser.Geom.Rectangle.Contains);
 
 button.on('pointerdown', () => {
   this.events.emit('input:openQuestbook');
@@ -1022,15 +942,9 @@ A tree collision body could be approximately **12 × 10 pixels** near the base, 
 ### Preload
 
 ```ts
-this.load.tilemapTiledJSON(
-  'island',
-  'assets/maps/island.json'
-);
+this.load.tilemapTiledJSON('island', 'assets/maps/island.json');
 
-this.load.image(
-  'island_tileset',
-  'assets/tilesets/island_tileset.png'
-);
+this.load.image('island_tileset', 'assets/tilesets/island_tileset.png');
 ```
 
 ### Map creation
@@ -1040,10 +954,7 @@ const map = this.make.tilemap({
   key: 'island',
 });
 
-const tileset = map.addTilesetImage(
-  'island_tileset',
-  'island_tileset'
-);
+const tileset = map.addTilesetImage('island_tileset', 'island_tileset');
 
 if (!tileset) {
   throw new Error('Tileset load failed');
@@ -1053,12 +964,7 @@ map.createLayer('Ground', tileset, 0, 0);
 map.createLayer('Water', tileset, 0, 0);
 map.createLayer('Paths', tileset, 0, 0);
 
-const collisionLayer = map.createLayer(
-  'Collision',
-  tileset,
-  0,
-  0
-);
+const collisionLayer = map.createLayer('Collision', tileset, 0, 0);
 
 if (!collisionLayer) {
   throw new Error('Collision layer not found');
@@ -1070,12 +976,7 @@ collisionLayer.setCollisionByProperty({
   collides: true,
 });
 
-this.cameras.main.setBounds(
-  0,
-  0,
-  map.widthInPixels,
-  map.heightInPixels
-);
+this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 ```
 
 ---
@@ -1102,10 +1003,7 @@ Make movement physically consistent and ensure that walkability checks use the s
 ### Implementation
 
 ```ts
-this.physics.add.collider(
-  this.player,
-  this.collisionLayer
-);
+this.physics.add.collider(this.player, this.collisionLayer);
 ```
 
 ---
@@ -1126,10 +1024,7 @@ this.physics.add.collider(
 ```ts
 this.physics.add.existing(npc);
 
-this.physics.add.collider(
-  npc,
-  this.collisionLayer
-);
+this.physics.add.collider(npc, this.collisionLayer);
 ```
 
 ---
@@ -1149,27 +1044,15 @@ this.physics.add.collider(
 ### Example
 
 ```ts
-const sceneryColliders =
-  this.physics.add.staticGroup();
+const sceneryColliders = this.physics.add.staticGroup();
 
-const trunkBody = this.add.rectangle(
-  tree.x,
-  tree.y + 12,
-  12,
-  10
-);
+const trunkBody = this.add.rectangle(tree.x, tree.y + 12, 12, 10);
 
-this.physics.add.existing(
-  trunkBody,
-  true
-);
+this.physics.add.existing(trunkBody, true);
 
 sceneryColliders.add(trunkBody);
 
-this.physics.add.collider(
-  this.player,
-  sceneryColliders
-);
+this.physics.add.collider(this.player, sceneryColliders);
 ```
 
 ---
@@ -1244,18 +1127,11 @@ ItemSpawns
 ### Implementation
 
 ```ts
-export class CollectibleItem
-  extends Phaser.Physics.Arcade.Sprite {
+export class CollectibleItem extends Phaser.Physics.Arcade.Sprite {
   public readonly itemId: string;
   public readonly questId: string;
 
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    itemKey: string,
-    questId: string
-  ) {
+  constructor(scene: Phaser.Scene, x: number, y: number, itemKey: string, questId: string) {
     super(scene, x, y, itemKey);
 
     this.itemId = itemKey;
@@ -1299,11 +1175,7 @@ export class CollectibleItem
 class SpawnManager {
   private activeItems: CollectibleItem[] = [];
 
-  spawnForQuest(
-    questId: string,
-    itemKey: string,
-    count: number
-  ): CollectibleItem[] {
+  spawnForQuest(questId: string, itemKey: string, count: number): CollectibleItem[] {
     // Read ItemSpawns.
     // Shuffle candidates.
     // Validate candidates.

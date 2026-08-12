@@ -34,7 +34,7 @@ export class SpawnManager {
     this.scene = scene;
     this.map = map;
     this.collisionLayer = collisionLayer;
-    this.itemGroup = scene.physics.add.group();
+    this.itemGroup = scene.physics.add.group({ maxSize: 50 });
   }
 
   getGroup(): Phaser.Physics.Arcade.Group {

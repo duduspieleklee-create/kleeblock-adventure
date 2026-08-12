@@ -51,8 +51,18 @@ export class BootScene extends Phaser.Scene {
     if (!import.meta.env.DEV) return;
 
     console.log('[Boot] Expected logical size:', BASE_WIDTH, '×', BASE_HEIGHT);
-    console.log('[Boot] Logical game size:', this.scale.gameSize.width, '×', this.scale.gameSize.height);
-    console.log('[Boot] Display size:', this.scale.displaySize.width, '×', this.scale.displaySize.height);
+    console.log(
+      '[Boot] Logical game size:',
+      this.scale.gameSize.width,
+      '×',
+      this.scale.gameSize.height,
+    );
+    console.log(
+      '[Boot] Display size:',
+      this.scale.displaySize.width,
+      '×',
+      this.scale.displaySize.height,
+    );
     console.log('[Boot] Canvas:', this.game.canvas?.width, '×', this.game.canvas?.height);
   }
 

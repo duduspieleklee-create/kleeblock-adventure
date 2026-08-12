@@ -59,7 +59,7 @@ export class QuestManager {
       const saved =
         typeof raw === 'string'
           ? (JSON.parse(raw) as Record<string, QuestStatus>)
-          : (raw as Record<string, QuestStatus>);
+          : (raw as unknown as Record<string, QuestStatus>);
       this.activeQuests = saved;
       // Backfill itemCounts for older saves
       for (const status of Object.values(this.activeQuests)) {
@@ -259,11 +259,7 @@ export class QuestManager {
 
   on(
     event:
-      | 'questStarted'
-      | 'objectiveCompleted'
-      | 'questCompleted'
-      | 'questFailed'
-      | 'itemProgress',
+      'questStarted' | 'objectiveCompleted' | 'questCompleted' | 'questFailed' | 'itemProgress',
     callback: (data: any) => void,
   ): void {
     this.questEvents.on(event, callback);

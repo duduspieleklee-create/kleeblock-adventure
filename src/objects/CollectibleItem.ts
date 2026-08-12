@@ -30,13 +30,7 @@ export class CollectibleItem extends Phaser.Physics.Arcade.Sprite {
   private collected = false;
   private bobTween?: Phaser.Tweens.Tween;
 
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    itemKey: string,
-    questId: string,
-  ) {
+  constructor(scene: Phaser.Scene, x: number, y: number, itemKey: string, questId: string) {
     ensureCollectibleTexture(scene);
     super(scene, Math.round(x), Math.round(y), TEXTURE_KEY);
 

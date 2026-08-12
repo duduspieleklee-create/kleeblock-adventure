@@ -17,22 +17,22 @@ Physics debug: open with `?debug=1`.
 
 Maps are authored in **[Tiled](https://www.mapeditor.org/)** (free, open source) and loaded as JSON by Phaser.
 
-| In repo | Role |
-|---------|------|
-| `public/assets/tilemaps/island.json` | Map loaded by the game |
+| In repo                                            | Role                    |
+| -------------------------------------------------- | ----------------------- |
+| `public/assets/tilemaps/island.json`               | Map loaded by the game  |
 | `public/assets/tilemaps/` (tileset image via pack) | SunnySide World tileset |
 
 Prefer keeping a **`.tmx` source** next to the JSON (edit TMX, export JSON for the game).
 
 ### Layer order (required)
 
-| Layer name | Purpose | In game |
-|------------|---------|---------|
-| `sea` | Water / background | Visible, GPU layer when WebGL |
-| `ground` | Walkable terrain | Visible, GPU layer when WebGL |
-| `ground_decoration` | Props on top of ground | Visible, GPU layer when WebGL |
-| `collision` | Solid tiles only | Hidden; regular `TilemapLayer` for Arcade Physics |
-| `objects` | Player spawn + NPCs | Object layer (`type`: `spawn` / `npc`) |
+| Layer name          | Purpose                | In game                                           |
+| ------------------- | ---------------------- | ------------------------------------------------- |
+| `sea`               | Water / background     | Visible, GPU layer when WebGL                     |
+| `ground`            | Walkable terrain       | Visible, GPU layer when WebGL                     |
+| `ground_decoration` | Props on top of ground | Visible, GPU layer when WebGL                     |
+| `collision`         | Solid tiles only       | Hidden; regular `TilemapLayer` for Arcade Physics |
+| `objects`           | Player spawn + NPCs    | Object layer (`type`: `spawn` / `npc`)            |
 
 Tileset name in Tiled must match code: **`sunnyside`**.
 
@@ -59,11 +59,11 @@ Marking more solid tiles in Tiled does **not** require code changes.
 
 ### Objects layer (spawns)
 
-| Object name | type | Properties |
-|-------------|------|------------|
-| `player_spawn` | `spawn` | `role: player` |
-| `welcome_npc` | `npc` | `dialogueId: welcome_npc` |
-| `vibes_npc` | `npc` | `dialogueId: vibes_npc` |
+| Object name    | type    | Properties                |
+| -------------- | ------- | ------------------------- |
+| `player_spawn` | `spawn` | `role: player`            |
+| `welcome_npc`  | `npc`   | `dialogueId: welcome_npc` |
+| `vibes_npc`    | `npc`   | `dialogueId: vibes_npc`   |
 
 Add NPCs in Tiled only; `IslandScene` reads the layer at runtime.
 
@@ -77,11 +77,11 @@ Add NPCs in Tiled only; `IslandScene` reads the layer at runtime.
 
 **Sizing guidance**
 
-| Size (tiles) | Notes |
-|--------------|--------|
-| 20×20 | Current prototype |
-| 64×64 – 128×128 | Comfortable single-map step up |
-| Larger | Prefer multiple maps (zones) or chunking; keep collision sparse |
+| Size (tiles)    | Notes                                                           |
+| --------------- | --------------------------------------------------------------- |
+| 20×20           | Current prototype                                               |
+| 64×64 – 128×128 | Comfortable single-map step up                                  |
+| Larger          | Prefer multiple maps (zones) or chunking; keep collision sparse |
 
 Visual layers use Phaser 4 **TilemapGPULayer** when WebGL is available (cost is mostly on-screen pixels). Collision stays on the CPU — paint only the solid cells you need.
 
@@ -106,10 +106,10 @@ Visual layers use Phaser 4 **TilemapGPULayer** when WebGL is available (cost is 
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Local dev server |
-| `npm run build` | Typecheck + production build |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier |
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Local dev server             |
+| `npm run build`     | Typecheck + production build |
+| `npm run typecheck` | `tsc --noEmit`               |
+| `npm run lint`      | ESLint                       |
+| `npm run format`    | Prettier                     |

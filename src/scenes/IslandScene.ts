@@ -8,12 +8,7 @@ import { QuestManager, Quest } from '../managers/QuestManager';
 import { SpawnManager } from '../managers/SpawnManager';
 import { InputManager } from '../input/InputManager';
 import { InputEvents, InteractTargetPayload, ItemEvents, QuestEvents } from '../input/InputEvents';
-import {
-  loadIslandMap,
-  getNpcSpawns,
-  getPlayerSpawn,
-  MAP_DEPTH,
-} from '../maps/MapLoader';
+import { loadIslandMap, getNpcSpawns, getPlayerSpawn, MAP_DEPTH } from '../maps/MapLoader';
 import { isFootprintWalkable } from '../maps/Walkability';
 import { DebugOverlay, isDebugMode } from '../debug/DebugOverlay';
 
@@ -97,14 +92,12 @@ export class IslandScene extends Phaser.Scene {
       this.updateQuestMarkers();
       this.onQuestCompleted(data.questId);
     });
-    this.questManager.on('itemProgress', (data: {
-      questId: string;
-      objectiveId: string;
-      current: number;
-      required: number;
-    }) => {
-      this.events.emit(QuestEvents.PROGRESS_CHANGED, data);
-    });
+    this.questManager.on(
+      'itemProgress',
+      (data: { questId: string; objectiveId: string; current: number; required: number }) => {
+        this.events.emit(QuestEvents.PROGRESS_CHANGED, data);
+      },
+    );
 
     this.events.on(Phaser.Scenes.Events.UPDATE, this.updateDepth, this);
   }
@@ -162,13 +155,14 @@ export class IslandScene extends Phaser.Scene {
   }
 
   private setupInput(): void {
-    let enableJoystick = false;
-    try {
-      const q = new URLSearchParams(window.location.search).get('joystick');
-      enableJoystick = q === '1' || q === 'true';
-    } catch {
-      enableJoystick = false;
-    }
+    const enableJoystick = (() => {
+      try {
+        const q = new URLSearchParams(window.location.search).get('joystick');
+        return q === '1' || q === 'true';
+      } catch {
+        return false;
+      }
+    })();
 
     this.inputManager = new InputManager(this, {
       player: this.player,
@@ -260,9 +254,7 @@ export class IslandScene extends Phaser.Scene {
     } else {
       for (const obj of npcSpawns) {
         const dialogueId =
-          (typeof obj.properties.dialogueId === 'string'
-            ? obj.properties.dialogueId
-            : null) ||
+          (typeof obj.properties.dialogueId === 'string' ? obj.properties.dialogueId : null) ||
           obj.name ||
           'unknown';
         const npc = new NPC(this, obj.x, obj.y, dialogueId);
@@ -322,7 +314,9 @@ export class IslandScene extends Phaser.Scene {
       },
     );
 
-    console.log('[IslandScene] Debug tools active (?debug=1)  F1 panel · F2 collision · F3 reset quests');
+    console.log(
+      '[IslandScene] Debug tools active (?debug=1)  F1 panel · F2 collision · F3 reset quests',
+    );
   }
 
   private setCollisionDebugVisible(show: boolean): void {

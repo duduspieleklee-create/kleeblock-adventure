@@ -23,13 +23,7 @@ Vite serves `public/` at the site root, so the path `/fonts/GameFont.woff2` reso
 3. Optionally switch the preload in `index.html` to:
 
 ```html
-<link
-  rel="preload"
-  href="/fonts/GameFont.woff2"
-  as="font"
-  type="font/woff2"
-  crossorigin
-/>
+<link rel="preload" href="/fonts/GameFont.woff2" as="font" type="font/woff2" crossorigin />
 ```
 
 ### License

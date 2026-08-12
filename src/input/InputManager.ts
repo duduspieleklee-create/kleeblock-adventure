@@ -2,7 +2,11 @@ import Phaser from 'phaser';
 import { PlayerInputController } from './PlayerInputController';
 import { PlayerMovementController } from './PlayerMovementController';
 import { DesktopKeyboardController } from './DesktopKeyboardController';
-import { PointerController, InteractiveTarget, PointerControllerOptions } from './PointerController';
+import {
+  PointerController,
+  InteractiveTarget,
+  PointerControllerOptions,
+} from './PointerController';
 import { DestinationMarker } from './DestinationMarker';
 import { VirtualJoystick } from './VirtualJoystick';
 import { DeviceDetector } from './DeviceDetector';

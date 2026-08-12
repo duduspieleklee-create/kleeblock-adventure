@@ -9,7 +9,7 @@ export class DeviceDetector {
   }
 
   static supportsMouse(game: Phaser.Game): boolean {
-    return !!game.device.input.mouse;
+    return !!(game.device.input as any).mouse;
   }
 
   static isHybrid(game: Phaser.Game): boolean {
