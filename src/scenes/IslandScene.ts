@@ -5,23 +5,18 @@ import { InteractionManager } from '../managers/InteractionManager';
 import { QuestManager, Quest } from '../managers/QuestManager';
 import { InputManager } from '../input/InputManager';
 import { InputEvents, InteractTargetPayload } from '../input/InputEvents';
-
-/** Depth convention (bottom → top) — world only; UI lives in UIScene */
-const DEPTH = {
-  SEA: 0,
-  GROUND: 1,
-  DECOR: 2,
-  ENTITIES: 10,
-} as const;
+import {
+  loadIslandMap,
+  getNpcSpawns,
+  getPlayerSpawn,
+  MAP_DEPTH,
+} from '../maps/MapLoader';
 
 export class IslandScene extends Phaser.Scene {
   private player!: SunnysidePlayer;
   private npcGroup!: Phaser.Physics.Arcade.StaticGroup;
   private map!: Phaser.Tilemaps.Tilemap;
 
-  private seaLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
-  private groundLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
-  private decorLayer!: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
   private collisionLayer!: Phaser.Tilemaps.TilemapLayer;
 
   private interactionManager?: InteractionManager;
@@ -39,18 +34,20 @@ export class IslandScene extends Phaser.Scene {
     this.dialogueData = this.cache.json.get('dialogues') ?? {};
     this.questsData = this.cache.json.get('quests') ?? {};
 
-    const map = this.setupMap();
-    if (!map) {
+    const loaded = loadIslandMap(this);
+    if (!loaded) {
       console.error('[IslandScene] Map setup failed – aborting scene');
       this.scene.start('MainMenuScene');
       return;
     }
-    this.map = map;
 
-    this.setupPhysics(map);
+    this.map = loaded.map;
+    this.collisionLayer = loaded.layers.collision;
+
+    this.setupPhysics(loaded.map);
     this.setupPlayer();
     this.setupNPCs();
-    this.setupCamera(map);
+    this.setupCamera(loaded.map);
     this.setupDebug();
     this.setupInput();
 
@@ -60,7 +57,6 @@ export class IslandScene extends Phaser.Scene {
     this.questManager = new QuestManager(this, this.questsData);
     this.setupQuestTriggers();
 
-    // Screen-space UI lives in UIScene (Milestone 4)
     if (!this.scene.isActive('UIScene')) {
       this.scene.launch('UIScene', {
         questManager: this.questManager,
@@ -107,10 +103,6 @@ export class IslandScene extends Phaser.Scene {
     }));
   }
 
-  /**
-   * Prefer UIScene input objects. Also treat scrollFactor 0 hits in this scene
-   * (legacy) and any active UIScene interactive as UI.
-   */
   private isPointerOnUI(pointer: Phaser.Input.Pointer): boolean {
     const uiScene = this.scene.get('UIScene');
     if (uiScene && uiScene.scene.isActive()) {
@@ -125,6 +117,7 @@ export class IslandScene extends Phaser.Scene {
     });
   }
 
+  /** Walkability must match Arcade collision data (Milestone 7.4 prep). */
   private isWalkable(worldX: number, worldY: number): boolean {
     if (!this.collisionLayer || !this.map) return false;
 
@@ -145,50 +138,14 @@ export class IslandScene extends Phaser.Scene {
     return !tile.collides;
   }
 
-  private onInputInteract(): void {
-    // InteractionManager listens for input:interact
-  }
-
+  private onInputInteract(): void {}
   private onInputInteractTarget(payload: InteractTargetPayload): void {
     if (import.meta.env.DEV) {
       console.log('[IslandScene] interactTarget', payload.targetId);
     }
   }
-
-  private onOpenQuestbook(): void {
-    // UIScene listens on world.events for input:openQuestbook
-  }
-
-  private onInputCancel(): void {
-    // UIScene closes questbook; movement already cleared by keyboard controller
-  }
-
-  private setupMap(): Phaser.Tilemaps.Tilemap | null {
-    const map = this.make.tilemap({ key: 'island' });
-
-    const tileset = map.addTilesetImage('sunnyside', 'sunnyside');
-    if (!tileset) {
-      console.error('[IslandScene] Tileset "sunnyside" failed to load');
-      return null;
-    }
-
-    const useGPU = this.game.renderer.type === Phaser.WEBGL;
-
-    this.seaLayer = map.createLayer('sea', tileset, 0, 0, useGPU)!;
-    this.seaLayer.setDepth(DEPTH.SEA);
-
-    this.groundLayer = map.createLayer('ground', tileset, 0, 0, useGPU)!;
-    this.groundLayer.setDepth(DEPTH.GROUND);
-
-    this.decorLayer = map.createLayer('ground_decoration', tileset, 0, 0, useGPU)!;
-    this.decorLayer.setDepth(DEPTH.DECOR);
-
-    this.collisionLayer = map.createLayer('collision', tileset, 0, 0, false)! as Phaser.Tilemaps.TilemapLayer;
-    this.collisionLayer.setVisible(false).setDepth(-1);
-    this.collisionLayer.setCollisionByProperty({ collides: true });
-
-    return map;
-  }
+  private onOpenQuestbook(): void {}
+  private onInputCancel(): void {}
 
   private setupPhysics(map: Phaser.Tilemaps.Tilemap): void {
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -208,60 +165,42 @@ export class IslandScene extends Phaser.Scene {
     }
   }
 
-  private getObjectProperty(obj: Phaser.Types.Tilemaps.TiledObject, key: string): string | undefined {
-    const props = obj.properties as Array<{ name: string; value: unknown }> | undefined;
-    if (!props) return undefined;
-    const found = props.find((p) => p.name === key);
-    return found ? String(found.value) : undefined;
-  }
-
   private setupPlayer(): void {
-    let x = 160;
-    let y = 180;
-
-    const objectLayer = this.map.getObjectLayer('objects');
-    if (objectLayer) {
-      const spawn = objectLayer.objects.find(
-        (o) => o.type === 'spawn' || o.name === 'player_spawn',
-      );
-      if (spawn && spawn.x !== undefined && spawn.y !== undefined) {
-        x = spawn.x;
-        y = spawn.y;
-      }
-    }
+    const spawn = getPlayerSpawn(this.map);
+    const x = spawn?.x ?? 160;
+    const y = spawn?.y ?? 180;
 
     this.player = new SunnysidePlayer(this, x, y);
-    this.player.setDepth(DEPTH.ENTITIES);
+    this.player.setDepth(MAP_DEPTH.ENTITIES);
     this.physics.add.collider(this.player, this.collisionLayer);
   }
 
   private setupNPCs(): void {
     this.npcGroup = this.physics.add.staticGroup();
 
-    const objectLayer = this.map.getObjectLayer('objects');
-    const npcObjects =
-      objectLayer?.objects.filter((o) => o.type === 'npc' || this.getObjectProperty(o, 'dialogueId')) ??
-      [];
+    const npcSpawns = getNpcSpawns(this.map);
 
-    if (npcObjects.length === 0) {
-      console.warn('[IslandScene] No NPCs found in objects layer – using fallback positions');
+    if (npcSpawns.length === 0) {
+      console.warn('[IslandScene] No NPCs in NPCSpawns/objects – using fallback');
       const fallback = [
         { x: 160, y: 120, dialogueId: 'welcome_npc' },
         { x: 200, y: 180, dialogueId: 'vibes_npc' },
       ];
       for (const data of fallback) {
         const npc = new NPC(this, data.x, data.y, data.dialogueId);
-        npc.setDepth(DEPTH.ENTITIES);
+        npc.setDepth(MAP_DEPTH.ENTITIES);
         this.npcGroup.add(npc);
       }
     } else {
-      for (const obj of npcObjects) {
+      for (const obj of npcSpawns) {
         const dialogueId =
-          this.getObjectProperty(obj, 'dialogueId') || obj.name || 'unknown';
-        const x = obj.x ?? 0;
-        const y = obj.y ?? 0;
-        const npc = new NPC(this, x, y, dialogueId);
-        npc.setDepth(DEPTH.ENTITIES);
+          (typeof obj.properties.dialogueId === 'string'
+            ? obj.properties.dialogueId
+            : null) ||
+          obj.name ||
+          'unknown';
+        const npc = new NPC(this, obj.x, obj.y, dialogueId);
+        npc.setDepth(MAP_DEPTH.ENTITIES);
         this.npcGroup.add(npc);
       }
     }
@@ -271,7 +210,6 @@ export class IslandScene extends Phaser.Scene {
 
   private setupCamera(map: Phaser.Tilemaps.Tilemap): void {
     const cam = this.cameras.main;
-
     cam.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     cam.startFollow(this.player, true, 0.1, 0.1);
     cam.setZoom(2);
@@ -279,11 +217,7 @@ export class IslandScene extends Phaser.Scene {
   }
 
   private setupDebug(): void {
-    const params = new URLSearchParams(window.location.search);
-    const debugEnabled =
-      params.get('debug') === '1' || params.get('debug') === 'true';
-
-    if (!debugEnabled) return;
+    if (!this.isPhysicsDebugEnabled()) return;
 
     const debugGraphics = this.add.graphics().setAlpha(0.6).setDepth(50);
     this.collisionLayer.renderDebug(debugGraphics, {
@@ -291,11 +225,12 @@ export class IslandScene extends Phaser.Scene {
       collidingTileColor: new Phaser.Display.Color(243, 134, 48, 200),
       faceColor: new Phaser.Display.Color(40, 39, 37, 255),
     });
+    this.collisionLayer.setVisible(true).setAlpha(0.35);
 
     this.physics.world.createDebugGraphic();
     this.physics.world.drawDebug = true;
 
-    console.log('[IslandScene] Physics debug enabled (?debug=1)');
+    console.log('[IslandScene] Physics + collision layer debug enabled (?debug=1)');
   }
 
   private setupQuestTriggers(): void {
@@ -337,17 +272,16 @@ export class IslandScene extends Phaser.Scene {
 
     this.npcGroup.getChildren().forEach((child) => {
       const npc = child as NPC;
-      const shouldShow = targetDialogueIds.has(npc.dialogueId);
-      npc.setQuestMarker(shouldShow, '#ffcc00');
+      npc.setQuestMarker(targetDialogueIds.has(npc.dialogueId), '#ffcc00');
     });
   }
 
   private updateDepth = (): void => {
-    this.player.setDepth(DEPTH.ENTITIES + this.player.y * 0.01);
+    this.player.setDepth(MAP_DEPTH.ENTITIES + this.player.y * 0.01);
 
     this.npcGroup.getChildren().forEach((child) => {
       const sprite = child as Phaser.GameObjects.Sprite;
-      sprite.setDepth(DEPTH.ENTITIES + sprite.y * 0.01);
+      sprite.setDepth(MAP_DEPTH.ENTITIES + sprite.y * 0.01);
     });
   };
 
