@@ -1,3 +1,20 @@
+/*
+ * GameFont — pixel UI face (Press Start 2P OFL).
+ * Prefer local file when present; fall back to jsDelivr CDN.
+ * font-display: block avoids layout shift from late font swap.
+ */
+@font-face {
+  font-family: 'GameFont';
+  src:
+    local('Press Start 2P'),
+    url('/fonts/GameFont.woff2') format('woff2'),
+    url('https://cdn.jsdelivr.net/fontsource/fonts/press-start-2p@5.2.7/latin-400-normal.woff2')
+      format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
 html,
 body {
   margin: 0;
