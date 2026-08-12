@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { applyCharacterBodyWhenReady } from './characterBody';
+import { AssetKeys } from '../config/AssetKeys';
 
 export class NPC extends Phaser.Physics.Arcade.Sprite {
   private _dialogueId: string;
@@ -11,7 +12,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   }
 
   constructor(scene: Phaser.Scene, x: number, y: number, dialogueId: string) {
-    super(scene, x, y, 'ss_idle', 1);
+    super(scene, x, y, AssetKeys.Characters.IDLE, 1);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -25,17 +26,19 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     applyCharacterBodyWhenReady(scene, this);
 
     // NPC idle animation (facing down, bobbing)
-    scene.anims.create({
-      key: 'npc_idle',
-      frames: [
-        { key: 'ss_idle', frame: 1 },
-        { key: 'ss_idle', frame: 3 },
-        { key: 'ss_idle', frame: 5 },
-        { key: 'ss_idle', frame: 7 },
-      ],
-      frameRate: 6,
-      repeat: -1,
-    });
+    if (!scene.anims.exists('npc_idle')) {
+      scene.anims.create({
+        key: 'npc_idle',
+        frames: [
+          { key: AssetKeys.Characters.IDLE, frame: 1 },
+          { key: AssetKeys.Characters.IDLE, frame: 3 },
+          { key: AssetKeys.Characters.IDLE, frame: 5 },
+          { key: AssetKeys.Characters.IDLE, frame: 7 },
+        ],
+        frameRate: 6,
+        repeat: -1,
+      });
+    }
 
     this.anims.play('npc_idle');
   }
