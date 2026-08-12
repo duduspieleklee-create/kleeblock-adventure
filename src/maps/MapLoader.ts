@@ -61,7 +61,9 @@ export function loadIslandMap(
     }
   }
 
-  const useGPU = scene.game.renderer.type === Phaser.WEBGL;
+  // Force CPU layers — Phaser 4 GPU tilemap path is incompatible with this tileset
+  // and crashes with "Cannot read properties of undefined (reading '0')"
+  const useGPU = false;
 
   const sea = map.createLayer('sea', tileset, 0, 0, useGPU) ?? undefined;
   sea?.setDepth(MAP_DEPTH.SEA);
@@ -70,16 +72,19 @@ export function loadIslandMap(
   ground?.setDepth(MAP_DEPTH.GROUND);
 
   // Optional visual layers (plan names or current map names)
+  // Only create if layer exists in map to avoid errors
   const paths =
-    map.createLayer('paths', tileset, 0, 0, useGPU) ??
-    map.createLayer('Paths', tileset, 0, 0, useGPU) ??
-    undefined;
+    map.getLayer('paths')
+      ? map.createLayer('paths', tileset, 0, 0, useGPU) ?? undefined
+      : undefined;
   paths?.setDepth(MAP_DEPTH.PATHS);
 
   const decor =
-    map.createLayer('ground_decoration', tileset, 0, 0, useGPU) ??
-    map.createLayer('Objects', tileset, 0, 0, useGPU) ??
-    undefined;
+    map.getLayer('ground_decoration')
+      ? map.createLayer('ground_decoration', tileset, 0, 0, useGPU) ?? undefined
+      : map.getLayer('Objects')
+        ? map.createLayer('Objects', tileset, 0, 0, useGPU) ?? undefined
+        : undefined;
   decor?.setDepth(MAP_DEPTH.DECOR);
 
   const collisionLayer = map.createLayer(

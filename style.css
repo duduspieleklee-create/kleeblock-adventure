@@ -8,6 +8,7 @@
   src:
     local('Press Start 2P'),
     url('/fonts/GameFont.woff2') format('woff2'),
+    url('/fonts/PressStart2P-Regular.ttf') format('truetype'),
     url('https://cdn.jsdelivr.net/fontsource/fonts/press-start-2p@5.2.7/latin-400-normal.woff2')
       format('woff2');
   font-weight: 400;
