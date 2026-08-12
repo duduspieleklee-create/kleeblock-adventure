@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { BASE_WIDTH, BASE_HEIGHT } from './config/GameConfig';
 import { BootScene } from './scenes/BootScene';
 import { PreloaderScene } from './scenes/PreloaderScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
@@ -14,15 +15,24 @@ window.onunhandledrejection = (ev) => {
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 480,
-  height: 360,
+
+  width: BASE_WIDTH,
+  height: BASE_HEIGHT,
+
   parent: 'game-container',
-  backgroundColor: '#1d1d2b',
-  roundPixels: true,
+  backgroundColor: '#000000',
+
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    expandParent: true,
   },
+
+  render: {
+    antialias: false,
+    roundPixels: true,
+  },
+
   physics: {
     default: 'arcade',
     arcade: {
@@ -30,6 +40,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
+
   scene: [BootScene, PreloaderScene, MainMenuScene, IslandScene],
 };
 
