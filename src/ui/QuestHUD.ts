@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { QuestManager, Quest } from '../managers/QuestManager';
+import { QuestManager, Quest, QuestStatus } from '../managers/QuestManager';
 import { UI_CONFIG } from './UIConstants';
 
 /**
  * Quest HUD (screen-space). Hosted by UIScene.
- * Prefer scale.gameSize for layout; no per-frame scaling.
+ * Displays state from QuestManager only — no quest logic here.
  */
 export class QuestHUD {
   private readonly scene: Phaser.Scene;
@@ -39,26 +39,16 @@ export class QuestHUD {
     return this.scene.scale.gameSize.height;
   }
 
-  /**
-   * Scale relative to design width 1280 so UI is readable on the logical canvas.
-   * Clamped to avoid tiny/huge extremes.
-   */
   private scale(v: number): number {
     const ref = 1280;
     const factor = Math.max(0.75, Math.min(1.25, this.refW / ref));
     return Math.round(factor * v);
   }
 
-  // =========================================================================
-  // Public API for UIScene / input events
-  // =========================================================================
-
-  /** Toggle questbook open/closed (Q / I / mobile button). */
   toggleQuestbook(): void {
     this.toggleQuestLog();
   }
 
-  /** Close questbook if open (Escape). */
   closeQuestbook(): void {
     if (this.isLogOpen) {
       this.isLogOpen = false;
@@ -69,10 +59,6 @@ export class QuestHUD {
   isQuestbookOpen(): boolean {
     return this.isLogOpen;
   }
-
-  // =========================================================================
-  // LEFT TRACKER
-  // =========================================================================
 
   private createTracker(): void {
     this.trackerContainer = this.scene.add
@@ -87,6 +73,15 @@ export class QuestHUD {
     const padX = this.scale(16);
     const padY = this.scale(16);
     this.trackerContainer.setPosition(padX, padY);
+  }
+
+  private formatObjectiveLine(quest: Quest, status: QuestStatus, obj: Quest['objectives'][0]): string {
+    if (obj.type === 'item') {
+      const required = obj.requiredCount ?? quest.requiredCount ?? 1;
+      const current = status.itemCounts?.[obj.id] ?? 0;
+      return `> ${obj.description} (${current}/${required})`;
+    }
+    return `> ${obj.description}`;
   }
 
   private refresh(): void {
@@ -131,7 +126,13 @@ export class QuestHUD {
       this.trackerContainer.add(t);
       this.trackerChildren.push(t);
     } else {
-      const status = active[0];
+      // Prefer item quest in tracker when multiple active
+      const status =
+        active.find((s) => {
+          const q = this.questsData[s.questId];
+          return q?.objectives.some((o) => o.type === 'item');
+        }) ?? active[0];
+
       const quest = this.questsData[status.questId];
       if (quest) {
         const title = this.scene.add
@@ -148,8 +149,9 @@ export class QuestHUD {
 
         const currentObj = quest.objectives.find((o) => !status.objectives[o.id]);
         if (currentObj) {
+          const line = this.formatObjectiveLine(quest, status, currentObj);
           const objText = this.scene.add
-            .text(cx, this.scale(58), `> ${currentObj.description}`, {
+            .text(cx, this.scale(58), line, {
               fontFamily: UI_CONFIG.FONT_FAMILY,
               fontSize: `${this.scale(11)}px`,
               color: '#5c4033',
@@ -183,10 +185,6 @@ export class QuestHUD {
   private trackerHeight(): number {
     return this.scale(110);
   }
-
-  // =========================================================================
-  // BOOK ICON
-  // =========================================================================
 
   private createBookIcon(): void {
     this.bookIcon = this.scene.add
@@ -238,10 +236,6 @@ export class QuestHUD {
     this.bookIcon.setPosition(this.refW - margin - iconW / 2, y);
   }
 
-  // =========================================================================
-  // INPUT / EVENTS
-  // =========================================================================
-
   private setupInput(): void {
     const keyboard = this.scene.input.keyboard;
     if (keyboard) {
@@ -253,15 +247,12 @@ export class QuestHUD {
   private setupEventListeners(): void {
     this.questManager.on('questStarted', () => this.refresh());
     this.questManager.on('objectiveCompleted', () => this.refresh());
+    this.questManager.on('itemProgress', () => this.refresh());
     this.questManager.on('questCompleted', (data: { quest: Quest }) => {
       this.showQuestCompletedNotification(data.quest);
       this.refresh();
     });
   }
-
-  // =========================================================================
-  // QUESTBOOK MODAL
-  // =========================================================================
 
   private toggleQuestLog(): void {
     this.isLogOpen = !this.isLogOpen;
@@ -399,7 +390,13 @@ export class QuestHUD {
         const done = first.objectives[obj.id];
         const mark = done ? '+' : 'o';
         const color = done ? '#2e7d32' : '#5c4033';
-        addRight(`${mark} ${obj.description}`, {
+        let line = `${mark} ${obj.description}`;
+        if (obj.type === 'item') {
+          const required = obj.requiredCount ?? detailQuest.requiredCount ?? 1;
+          const current = first.itemCounts?.[obj.id] ?? 0;
+          line = `${mark} ${obj.description} (${current}/${required})`;
+        }
+        addRight(line, {
           fontFamily: UI_CONFIG.FONT_FAMILY,
           fontSize: `${this.scale(12)}px`,
           color,
