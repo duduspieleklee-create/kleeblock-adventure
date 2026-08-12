@@ -1,12 +1,10 @@
 import Phaser from 'phaser';
 import { QuestManager, Quest } from '../managers/QuestManager';
+import { UI_CONFIG } from './UIConstants';
 
 /**
- * Quest HUD with fully dynamic, crisp sizing.
- *
- * Rule: never scale a container that holds text.
- * Instead, derive all positions and sizes from viewport dimensions,
- * round to whole pixels, and rebuild elements when the viewport changes.
+ * Quest HUD (screen-space). Hosted by UIScene.
+ * Prefer scale.gameSize for layout; no per-frame scaling.
  */
 export class QuestHUD {
   private readonly scene: Phaser.Scene;
@@ -33,21 +31,43 @@ export class QuestHUD {
     this.refresh();
   }
 
-  // =========================================================================
-  // VIEWPORT HELPERS
-  // =========================================================================
+  private get refW(): number {
+    return this.scene.scale.gameSize.width;
+  }
 
-  private get refW(): number { return this.scene.cameras.main.width; }
-  private get refH(): number { return this.scene.cameras.main.height; }
+  private get refH(): number {
+    return this.scene.scale.gameSize.height;
+  }
 
   /**
-   * Scale factor relative to a 480×360 reference.
-   * Values are clamped and rounded so we never leave fractional pixels.
+   * Scale relative to design width 1280 so UI is readable on the logical canvas.
+   * Clamped to avoid tiny/huge extremes.
    */
   private scale(v: number): number {
-    const ref = 480;
-    const raw = Math.max(0.5, Math.min(1.1, Math.min(this.refW, this.refH) / ref)) * v;
-    return Math.round(raw);
+    const ref = 1280;
+    const factor = Math.max(0.75, Math.min(1.25, this.refW / ref));
+    return Math.round(factor * v);
+  }
+
+  // =========================================================================
+  // Public API for UIScene / input events
+  // =========================================================================
+
+  /** Toggle questbook open/closed (Q / I / mobile button). */
+  toggleQuestbook(): void {
+    this.toggleQuestLog();
+  }
+
+  /** Close questbook if open (Escape). */
+  closeQuestbook(): void {
+    if (this.isLogOpen) {
+      this.isLogOpen = false;
+      this.hideQuestLog();
+    }
+  }
+
+  isQuestbookOpen(): boolean {
+    return this.isLogOpen;
   }
 
   // =========================================================================
@@ -64,11 +84,9 @@ export class QuestHUD {
   }
 
   private positionTracker(): void {
-    const padX = this.scale(6);
-    const padY = this.scale(6);
-    const topY = padY + this.scale(8);
-
-    this.trackerContainer.setPosition(padX, topY);
+    const padX = this.scale(16);
+    const padY = this.scale(16);
+    this.trackerContainer.setPosition(padX, padY);
   }
 
   private refresh(): void {
@@ -82,69 +100,76 @@ export class QuestHUD {
     const cx = w / 2;
 
     const bg = this.scene.add.graphics();
-    bg.fillStyle(0xf5e6c8, 0.95);
-    bg.fillRoundedRect(0, 0, w, h, this.scale(3));
-    bg.lineStyle(this.scale(1), 0x8b6914, 1);
-    bg.strokeRoundedRect(0, 0, w, h, this.scale(3));
+    bg.fillStyle(UI_CONFIG.PARCHMENT_BG, 0.95);
+    bg.fillRoundedRect(0, 0, w, h, this.scale(6));
+    bg.lineStyle(this.scale(2), UI_CONFIG.PARCHMENT_BORDER, 1);
+    bg.strokeRoundedRect(0, 0, w, h, this.scale(6));
     this.trackerContainer.add(bg);
     this.trackerChildren.push(bg);
 
-    const header = this.scene.add.text(cx, this.scale(6), 'Active', {
-      fontFamily: 'monospace',
-      fontSize: `${this.scale(9)}px`,
-      color: '#5c4033',
-      fontStyle: 'bold',
-    }).setOrigin(0.5, 0);
+    const header = this.scene.add
+      .text(cx, this.scale(10), 'Active', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(14)}px`,
+        color: '#5c4033',
+      })
+      .setOrigin(0.5, 0);
     this.trackerContainer.add(header);
     this.trackerChildren.push(header);
 
     const active = this.questManager.getActiveQuests();
 
     if (active.length === 0) {
-      const t = this.scene.add.text(cx, this.scale(24), 'No active\nquests', {
-        fontFamily: 'monospace',
-        fontSize: `${this.scale(8)}px`,
-        color: '#8b6914',
-        align: 'center',
-      }).setOrigin(0.5);
+      const t = this.scene.add
+        .text(cx, this.scale(40), 'No active quests', {
+          fontFamily: UI_CONFIG.FONT_FAMILY,
+          fontSize: `${this.scale(12)}px`,
+          color: UI_CONFIG.PARCHMENT_MUTED,
+          align: 'center',
+        })
+        .setOrigin(0.5);
       this.trackerContainer.add(t);
       this.trackerChildren.push(t);
     } else {
       const status = active[0];
       const quest = this.questsData[status.questId];
       if (quest) {
-        const title = this.scene.add.text(cx, this.scale(16), quest.title, {
-          fontFamily: 'monospace',
-          fontSize: `${this.scale(8)}px`,
-          color: '#3d2914',
-          fontStyle: 'bold',
-          wordWrap: { width: w - this.scale(10) },
-          align: 'center',
-        }).setOrigin(0.5, 0);
+        const title = this.scene.add
+          .text(cx, this.scale(32), quest.title, {
+            fontFamily: UI_CONFIG.FONT_FAMILY,
+            fontSize: `${this.scale(13)}px`,
+            color: UI_CONFIG.PARCHMENT_TEXT,
+            wordWrap: { width: w - this.scale(20) },
+            align: 'center',
+          })
+          .setOrigin(0.5, 0);
         this.trackerContainer.add(title);
         this.trackerChildren.push(title);
 
         const currentObj = quest.objectives.find((o) => !status.objectives[o.id]);
         if (currentObj) {
-          const objText = this.scene.add.text(cx, this.scale(30), `→ ${currentObj.description}`, {
-            fontFamily: 'monospace',
-            fontSize: `${this.scale(7)}px`,
-            color: '#5c4033',
-            wordWrap: { width: w - this.scale(10) },
-            align: 'center',
-          }).setOrigin(0.5, 0);
+          const objText = this.scene.add
+            .text(cx, this.scale(58), `> ${currentObj.description}`, {
+              fontFamily: UI_CONFIG.FONT_FAMILY,
+              fontSize: `${this.scale(11)}px`,
+              color: '#5c4033',
+              wordWrap: { width: w - this.scale(20) },
+              align: 'center',
+            })
+            .setOrigin(0.5, 0);
           this.trackerContainer.add(objText);
           this.trackerChildren.push(objText);
         }
       }
     }
 
-    const hint = this.scene.add.text(cx, h - this.scale(8), 'Q / book', {
-      fontFamily: 'monospace',
-      fontSize: `${this.scale(7)}px`,
-      color: '#8b6914',
-      fontStyle: 'italic',
-    }).setOrigin(0.5);
+    const hint = this.scene.add
+      .text(cx, h - this.scale(14), 'Q / I / book', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(10)}px`,
+        color: UI_CONFIG.PARCHMENT_MUTED,
+      })
+      .setOrigin(0.5);
     this.trackerContainer.add(hint);
     this.trackerChildren.push(hint);
 
@@ -152,19 +177,11 @@ export class QuestHUD {
   }
 
   private trackerWidth(): number {
-    const narrow = this.refW < this.refH;
-    if (narrow) {
-      return Math.min(this.refW - this.scale(12), this.scale(150));
-    }
-    return this.scale(110);
+    return Math.min(this.refW - this.scale(32), this.scale(280));
   }
 
   private trackerHeight(): number {
-    const narrow = this.refW < this.refH;
-    if (narrow) {
-      return this.scale(30);
-    }
-    return this.scale(60);
+    return this.scale(110);
   }
 
   // =========================================================================
@@ -176,7 +193,10 @@ export class QuestHUD {
       .container(0, 0)
       .setScrollFactor(0)
       .setDepth(9999)
-      .setInteractive(new Phaser.Geom.Rectangle(-10, -12, 20, 24), Phaser.Geom.Rectangle.Contains);
+      .setInteractive(
+        new Phaser.Geom.Rectangle(-20, -24, 40, 48),
+        Phaser.Geom.Rectangle.Contains,
+      );
 
     this.rebuildBookIcon();
 
@@ -186,13 +206,12 @@ export class QuestHUD {
   }
 
   private hoverBookIcon(over: boolean): void {
-    // Slight visual feedback without scaling the text-bearing container.
     const icon = this.bookIcon.getAt(0) as Phaser.GameObjects.Graphics | undefined;
     if (icon) {
       icon.clear();
-      const factor = over ? 1.15 : 1;
-      const w = Math.round(this.scale(14) * factor);
-      const h = Math.round(this.scale(18) * factor);
+      const factor = over ? 1.12 : 1;
+      const w = Math.round(this.scale(28) * factor);
+      const h = Math.round(this.scale(36) * factor);
       bookBg(icon, w, h);
     }
     this.positionBookIcon();
@@ -201,8 +220,8 @@ export class QuestHUD {
   private rebuildBookIcon(): void {
     this.bookIcon.removeAll(true);
 
-    const w = this.scale(14);
-    const h = this.scale(18);
+    const w = this.scale(28);
+    const h = this.scale(36);
 
     const icon = this.scene.add.graphics();
     bookBg(icon, w, h);
@@ -212,12 +231,11 @@ export class QuestHUD {
   }
 
   private positionBookIcon(): void {
-    const cam = this.scene.cameras.main;
-    const margin = this.scale(8);
-    const iconW = this.scale(12);
-    const y = this.scale(22);
+    const margin = this.scale(24);
+    const iconW = this.scale(28);
+    const y = this.scale(40);
 
-    this.bookIcon.setPosition(cam.width - margin - iconW / 2, y);
+    this.bookIcon.setPosition(this.refW - margin - iconW / 2, y);
   }
 
   // =========================================================================
@@ -235,7 +253,7 @@ export class QuestHUD {
   private setupEventListeners(): void {
     this.questManager.on('questStarted', () => this.refresh());
     this.questManager.on('objectiveCompleted', () => this.refresh());
-    this.questManager.on('questCompleted', (data: any) => {
+    this.questManager.on('questCompleted', (data: { quest: Quest }) => {
       this.showQuestCompletedNotification(data.quest);
       this.refresh();
     });
@@ -254,34 +272,32 @@ export class QuestHUD {
   private showQuestLog(): void {
     this.hideQuestLog();
 
-    const cam = this.scene.cameras.main;
-    const margin = this.scale(8);
-
-    const maxW = cam.width - margin * 2;
-    const maxH = cam.height - margin * 2;
-    const bookW = Math.max(this.scale(180), Math.min(maxW, this.scale(280)));
-    const bookH = Math.max(this.scale(110), Math.min(maxH, this.scale(180)));
+    const margin = this.scale(24);
+    const maxW = this.refW - margin * 2;
+    const maxH = this.refH - margin * 2;
+    const bookW = Math.max(this.scale(420), Math.min(maxW, this.scale(720)));
+    const bookH = Math.max(this.scale(280), Math.min(maxH, this.scale(420)));
 
     this.questLogContainer = this.scene.add
-      .container(cam.width / 2, cam.height / 2)
+      .container(this.refW / 2, this.refH / 2)
       .setScrollFactor(0)
       .setDepth(10000);
 
     const overlay = this.scene.add.graphics();
     overlay.fillStyle(0x000000, 0.55);
-    overlay.fillRect(-cam.width / 2, -cam.height / 2, cam.width, cam.height);
+    overlay.fillRect(-this.refW / 2, -this.refH / 2, this.refW, this.refH);
     this.questLogContainer.add(overlay);
 
     const book = this.scene.add.graphics();
-    book.fillStyle(0xf5e6c8, 0.98);
-    book.fillRoundedRect(-bookW / 2, -bookH / 2, bookW, bookH, this.scale(5));
-    book.lineStyle(this.scale(1.5), 0x8b6914, 1);
-    book.strokeRoundedRect(-bookW / 2, -bookH / 2, bookW, bookH, this.scale(5));
+    book.fillStyle(UI_CONFIG.PARCHMENT_BG, 0.98);
+    book.fillRoundedRect(-bookW / 2, -bookH / 2, bookW, bookH, this.scale(8));
+    book.lineStyle(this.scale(3), UI_CONFIG.PARCHMENT_BORDER, 1);
+    book.strokeRoundedRect(-bookW / 2, -bookH / 2, bookW, bookH, this.scale(8));
     book.lineStyle(this.scale(1), 0x5c4033, 0.4);
-    book.lineBetween(0, -bookH / 2 + this.scale(6), 0, bookH / 2 - this.scale(6));
+    book.lineBetween(0, -bookH / 2 + this.scale(12), 0, bookH / 2 - this.scale(12));
     this.questLogContainer.add(book);
 
-    const contentPad = this.scale(8);
+    const contentPad = this.scale(16);
     const pageW = Math.max(1, bookW / 2 - contentPad * 2);
 
     const activeQuests = this.questManager.getActiveQuests();
@@ -296,31 +312,57 @@ export class QuestHUD {
     const addLeft = (text: string, style: Phaser.Types.GameObjects.Text.TextStyle) => {
       const t = this.scene.add.text(Math.round(leftX), Math.round(y), text, style).setOrigin(0);
       this.questLogContainer!.add(t);
-      y += this.scale(12);
+      y += this.scale(20);
     };
 
-    addLeft('Active', { fontFamily: 'monospace', fontSize: `${this.scale(9)}px`, color: '#5c4033', fontStyle: 'bold' });
+    addLeft('Active', {
+      fontFamily: UI_CONFIG.FONT_FAMILY,
+      fontSize: `${this.scale(14)}px`,
+      color: '#5c4033',
+    });
 
     if (activeQuests.length === 0) {
-      addLeft('None', { fontFamily: 'monospace', fontSize: `${this.scale(8)}px`, color: '#8b6914' });
+      addLeft('None', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(12)}px`,
+        color: UI_CONFIG.PARCHMENT_MUTED,
+      });
     } else {
       for (const qs of activeQuests) {
         const q = this.questsData[qs.questId];
         if (!q) continue;
-        addLeft(`* ${q.title}`, { fontFamily: 'monospace', fontSize: `${this.scale(8)}px`, color: '#3d2914', wordWrap: { width: Math.round(pageW) } });
+        addLeft(`* ${q.title}`, {
+          fontFamily: UI_CONFIG.FONT_FAMILY,
+          fontSize: `${this.scale(12)}px`,
+          color: UI_CONFIG.PARCHMENT_TEXT,
+          wordWrap: { width: Math.round(pageW) },
+        });
       }
     }
 
-    y += this.scale(4);
-    addLeft('Completed', { fontFamily: 'monospace', fontSize: `${this.scale(9)}px`, color: '#5c4033', fontStyle: 'bold' });
+    y += this.scale(8);
+    addLeft('Completed', {
+      fontFamily: UI_CONFIG.FONT_FAMILY,
+      fontSize: `${this.scale(14)}px`,
+      color: '#5c4033',
+    });
 
     if (completed.length === 0) {
-      addLeft('None yet', { fontFamily: 'monospace', fontSize: `${this.scale(8)}px`, color: '#8b6914' });
+      addLeft('None yet', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(12)}px`,
+        color: UI_CONFIG.PARCHMENT_MUTED,
+      });
     } else {
       for (const qs of completed) {
         const q = this.questsData[qs.questId];
         if (!q) continue;
-        addLeft(`+ ${q.title}`, { fontFamily: 'monospace', fontSize: `${this.scale(8)}px`, color: '#2e7d32', wordWrap: { width: Math.round(pageW) } });
+        addLeft(`+ ${q.title}`, {
+          fontFamily: UI_CONFIG.FONT_FAMILY,
+          fontSize: `${this.scale(12)}px`,
+          color: '#2e7d32',
+          wordWrap: { width: Math.round(pageW) },
+        });
       }
     }
 
@@ -330,32 +372,55 @@ export class QuestHUD {
     const addRight = (text: string, style: Phaser.Types.GameObjects.Text.TextStyle) => {
       const t = this.scene.add.text(Math.round(rightX), Math.round(y), text, style).setOrigin(0);
       this.questLogContainer!.add(t);
-      y += this.scale(12);
+      y += this.scale(20);
     };
 
-    if (detailQuest) {
-      addRight(detailQuest.title, { fontFamily: 'monospace', fontSize: `${this.scale(9)}px`, color: '#3d2914', fontStyle: 'bold', wordWrap: { width: Math.round(pageW) } });
+    if (detailQuest && first) {
+      addRight(detailQuest.title, {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(14)}px`,
+        color: UI_CONFIG.PARCHMENT_TEXT,
+        wordWrap: { width: Math.round(pageW) },
+      });
       if (detailQuest.description) {
-        addRight(detailQuest.description, { fontFamily: 'monospace', fontSize: `${this.scale(8)}px`, color: '#5c4033', wordWrap: { width: Math.round(pageW) } });
+        addRight(detailQuest.description, {
+          fontFamily: UI_CONFIG.FONT_FAMILY,
+          fontSize: `${this.scale(12)}px`,
+          color: '#5c4033',
+          wordWrap: { width: Math.round(pageW) },
+        });
       }
-      addRight('Objectives', { fontFamily: 'monospace', fontSize: `${this.scale(9)}px`, color: '#5c4033', fontStyle: 'bold' });
+      addRight('Objectives', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(14)}px`,
+        color: '#5c4033',
+      });
       for (const obj of detailQuest.objectives) {
         const done = first.objectives[obj.id];
         const mark = done ? '+' : 'o';
         const color = done ? '#2e7d32' : '#5c4033';
-        addRight(`${mark} ${obj.description}`, { fontFamily: 'monospace', fontSize: `${this.scale(8)}px`, color, wordWrap: { width: Math.round(pageW) } });
+        addRight(`${mark} ${obj.description}`, {
+          fontFamily: UI_CONFIG.FONT_FAMILY,
+          fontSize: `${this.scale(12)}px`,
+          color,
+          wordWrap: { width: Math.round(pageW) },
+        });
       }
     } else {
-      addRight('No active quest', { fontFamily: 'monospace', fontSize: `${this.scale(8)}px`, color: '#8b6914' });
+      addRight('No active quest', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(12)}px`,
+        color: UI_CONFIG.PARCHMENT_MUTED,
+      });
     }
 
     const closeBtn = this.scene.add
-      .text(Math.round(0), Math.round(bookH / 2 - this.scale(12)), '[Close]  Q', {
-        fontFamily: 'monospace',
-        fontSize: `${this.scale(9)}px`,
+      .text(0, Math.round(bookH / 2 - this.scale(28)), '[Close]  Q / Esc', {
+        fontFamily: UI_CONFIG.FONT_FAMILY,
+        fontSize: `${this.scale(12)}px`,
         color: '#5c4033',
         backgroundColor: '#e8d5a3',
-        padding: { x: this.scale(5), y: this.scale(2) },
+        padding: { x: this.scale(8), y: this.scale(4) },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -370,48 +435,42 @@ export class QuestHUD {
     }
   }
 
-  // =========================================================================
-  // NOTIFICATION
-  // =========================================================================
-
   private showQuestCompletedNotification(quest: Quest): void {
-    const cam = this.scene.cameras.main;
     const notif = this.scene.add
-      .container(cam.width / 2, cam.height / 2 - this.scale(24))
+      .container(this.refW / 2, this.refH / 2 - this.scale(40))
       .setScrollFactor(0)
       .setDepth(10001);
 
-    const w = this.scale(220);
-    const h = this.scale(50);
+    const w = this.scale(420);
+    const h = this.scale(80);
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x1a3a1a, 0.95);
-    bg.fillRoundedRect(-w / 2, -h / 2, w, h, this.scale(4));
-    bg.lineStyle(this.scale(2), 0x00ff88, 1);
-    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, this.scale(4));
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, this.scale(6));
+    bg.lineStyle(this.scale(3), 0x00ff88, 1);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, this.scale(6));
     notif.add(bg);
 
     notif.add(
-      this.scene.add.text(0, this.scale(-10), 'Quest Completed!', {
-        fontFamily: 'monospace',
-        fontSize: `${this.scale(10)}px`,
-        color: '#00ff88',
-        fontStyle: 'bold',
-      }).setOrigin(0.5),
+      this.scene.add
+        .text(0, this.scale(-16), 'Quest Completed!', {
+          fontFamily: UI_CONFIG.FONT_FAMILY,
+          fontSize: `${this.scale(16)}px`,
+          color: '#00ff88',
+        })
+        .setOrigin(0.5),
     );
     notif.add(
-      this.scene.add.text(0, this.scale(10), quest.title, {
-        fontFamily: 'monospace',
-        fontSize: `${this.scale(8)}px`,
-        color: '#ffff88',
-      }).setOrigin(0.5),
+      this.scene.add
+        .text(0, this.scale(16), quest.title, {
+          fontFamily: UI_CONFIG.FONT_FAMILY,
+          fontSize: `${this.scale(13)}px`,
+          color: '#ffff88',
+        })
+        .setOrigin(0.5),
     );
 
     this.scene.time.delayedCall(2800, () => notif.destroy());
   }
-
-  // =========================================================================
-  // RESIZE / CLEANUP
-  // =========================================================================
 
   resize(): void {
     this.rebuildBookIcon();
@@ -439,7 +498,12 @@ function bookBg(icon: Phaser.GameObjects.Graphics, w: number, h: number): void {
   icon.lineStyle(Math.max(1, Math.round(w / 14)), 0x5c3317, 1);
   icon.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
   icon.fillStyle(0xf5e6c8, 1);
-  icon.fillRect(-w / 2 + Math.round(w / 7), -h / 2 + Math.round(h / 9), w - Math.round(w / 3.5), h - Math.round(h / 4.5));
+  icon.fillRect(
+    -w / 2 + Math.round(w / 7),
+    -h / 2 + Math.round(h / 9),
+    w - Math.round(w / 3.5),
+    h - Math.round(h / 4.5),
+  );
   icon.lineStyle(Math.max(1, Math.round(w / 14)), 0x5c3317, 1);
   icon.lineBetween(0, -h / 2 + Math.round(h / 9), 0, h / 2 - Math.round(h / 9));
 }
