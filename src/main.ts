@@ -6,9 +6,9 @@ import { MainMenuScene } from './scenes/MainMenuScene';
 import { IslandScene } from './scenes/IslandScene';
 import { UIScene } from './scenes/UIScene';
 
-// Global error catchers — turn silent freezes into console logs
+// Always keep fatal hooks; verbose stack only needed in DEV
 window.onerror = (msg, _src, _line, _col, err) => {
-  console.error('GLOBAL ERROR:', msg, err?.stack);
+  console.error('GLOBAL ERROR:', msg, import.meta.env.DEV ? err?.stack : undefined);
 };
 window.onunhandledrejection = (ev) => {
   console.error('UNHANDLED REJECTION:', ev.reason);
@@ -47,6 +47,8 @@ const config: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(config);
 
-// Expose game instance for playtest harness (dev only)
-if (import.meta.env.DEV) (window as any).__PHASER_GAME__ = game;
+if (import.meta.env.DEV) {
+  (window as unknown as { __PHASER_GAME__?: Phaser.Game }).__PHASER_GAME__ = game;
+}
+
 export default game;
